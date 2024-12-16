@@ -12,13 +12,13 @@ type Server struct {
 	Router *http.ServeMux
 }
 
-func NewServer(c *config.Config) *Server {
+func NewServer(c *config.Config, router *http.ServeMux) *Server {
 	addr := fmt.Sprintf("%s:%s", c.HttpConf.Host, c.HttpConf.Port)
 	log.WithFields(log.Fields{"Address": addr}).Debug("Server created")
 
 	return &Server{
 		Addr:   addr,
-		Router: http.NewServeMux(),
+		Router: router,
 	}
 }
 
