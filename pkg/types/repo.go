@@ -1,5 +1,6 @@
 package types
 
 type Repo interface {
-	Migrate() error
+	Migrate(any) error
+	Create(any) error
 }
