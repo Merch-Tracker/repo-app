@@ -11,7 +11,7 @@ type DB struct {
 	*gorm.DB
 }
 
-func NewDB(c *config.Config) (*DB, error) {
+func Connection(c *config.Config) (*DB, error) {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		c.DBConf.Host, c.DBConf.Port, c.DBConf.Username, c.DBConf.Password, c.DBConf.DBName, c.DBConf.SSLMode)
 
@@ -25,8 +25,4 @@ func NewDB(c *config.Config) (*DB, error) {
 	}
 
 	return &DB{db}, nil
-}
-
-func (d *DB) Migrate() error {
-	return nil
 }
