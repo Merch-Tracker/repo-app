@@ -1,6 +1,7 @@
 package user
 
 import (
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"repo-app/pkg/helpers"
@@ -67,18 +68,65 @@ func (u *UserHandler) Create() http.HandlerFunc {
 
 func (u *UserHandler) Read() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		w.WriteHeader(http.StatusNotImplemented)
 	}
 }
 
 func (u *UserHandler) Update() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var (
+			err        error
+			updateUser = User{}
+		)
 
+		userId, err := helpers.GetUUID(w, r, "userid")
+		if err != nil || userId == uuid.Nil {
+			return
+		}
+
+		body, err := helpers.ReadBody(w, r)
+		if err != nil {
+			return
+		}
+
+		err = helpers.DeserializeJSON(w, body, &updateUser)
+		if err != nil {
+			return
+		}
+
+		updateUser.UserUUID = userId
+		err = updateUser.Update(u.repo)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			log.Error("Update user")
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+		log.WithFields(log.Fields{"data": updateUser}).Info("Update user")
 	}
 }
 
 func (u *UserHandler) Delete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var (
+			err        error
+			deleteUser = User{}
+		)
 
+		userId, err := helpers.GetUUID(w, r, "userid")
+		if err != nil || userId == uuid.Nil {
+			return
+		}
+
+		deleteUser.UserUUID = userId
+		err = deleteUser.Delete(u.repo)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			log.Error("Delete user")
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+		log.WithFields(log.Fields{"data": deleteUser}).Info("Delete user")
 	}
 }

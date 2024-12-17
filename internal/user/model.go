@@ -39,3 +39,25 @@ func (u *User) Create(repo Repo) error {
 	}
 	return nil
 }
+
+func (u *User) Update(repo Repo) error {
+	params := make(map[string]any)
+	params["user_uuid"] = u.UserUUID
+
+	err := repo.Update(u, params)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *User) Delete(repo Repo) error {
+	params := make(map[string]any)
+	params["user_uuid"] = u.UserUUID
+
+	err := repo.Delete(u, params)
+	if err != nil {
+		return err
+	}
+	return nil
+}
