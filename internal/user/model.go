@@ -40,6 +40,15 @@ func (u *User) Create(repo Repo) error {
 	return nil
 }
 
+func (u *User) ReadOne(repo Repo) error {
+	params := map[string]any{"user_uuid": u.UserUUID}
+	err := repo.ReadOne(u, params)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (u *User) Update(repo Repo) error {
 	params := make(map[string]any)
 	params["user_uuid"] = u.UserUUID

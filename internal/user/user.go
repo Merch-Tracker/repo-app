@@ -68,17 +68,33 @@ func (u *UserHandler) Create() http.HandlerFunc {
 
 func (u *UserHandler) Read() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotImplemented)
+		userId, err := helpers.GetUUID(w, r, "userid")
+		if err != nil || userId == uuid.Nil {
+			return
+		}
+
+		readUser := &User{}
+		readUser.UserUUID = userId
+		err = readUser.ReadOne(u.repo)
+		if err != nil {
+			w.WriteHeader(http.StatusNotFound)
+			log.WithField("msg", err).Error("Read user")
+			return
+		}
+
+		response, err := helpers.SerializeJSON(w, readUser)
+		if err != nil {
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(response)
 	}
 }
 
 func (u *UserHandler) Update() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var (
-			err        error
-			updateUser = User{}
-		)
-
 		userId, err := helpers.GetUUID(w, r, "userid")
 		if err != nil || userId == uuid.Nil {
 			return
@@ -89,6 +105,7 @@ func (u *UserHandler) Update() http.HandlerFunc {
 			return
 		}
 
+		updateUser := &User{}
 		err = helpers.DeserializeJSON(w, body, &updateUser)
 		if err != nil {
 			return
@@ -109,16 +126,12 @@ func (u *UserHandler) Update() http.HandlerFunc {
 
 func (u *UserHandler) Delete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var (
-			err        error
-			deleteUser = User{}
-		)
-
 		userId, err := helpers.GetUUID(w, r, "userid")
 		if err != nil || userId == uuid.Nil {
 			return
 		}
 
+		deleteUser := &User{}
 		deleteUser.UserUUID = userId
 		err = deleteUser.Delete(u.repo)
 		if err != nil {
