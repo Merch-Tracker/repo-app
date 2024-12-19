@@ -11,9 +11,9 @@ type Repo types.Repo
 type User struct {
 	gorm.Model
 	UserUUID uuid.UUID
-	Username string `gorm:"unique"`
-	Password string
-	Email    string `gorm:"unique"`
+	Username string `gorm:"unique" validate:"required"`
+	Password string `validate:"required"`
+	Email    string `gorm:"unique" validate:"required"`
 }
 
 func Migrate(repo Repo) error {
@@ -24,16 +24,21 @@ func Migrate(repo Repo) error {
 	return nil
 }
 
-func (u *User) Create(repo Repo) error {
-	var err error
-
-	u.UserUUID = uuid.New()
-	u.Password, err = hashPassword(u.Password)
+// Create Creates new user record in repository using RegisterUser payload.
+func (r *RegisterUser) Create(repo Repo) error {
+	hashedPassword, err := hashPassword(r.Password)
 	if err != nil {
 		return err
 	}
 
-	err = repo.Create(u)
+	usr := User{
+		UserUUID: uuid.New(),
+		Username: r.Username,
+		Password: hashedPassword,
+		Email:    r.Email,
+	}
+
+	err = repo.Create(usr)
 	if err != nil {
 		return err
 	}
@@ -41,7 +46,16 @@ func (u *User) Create(repo Repo) error {
 }
 
 func (u *User) ReadOne(repo Repo) error {
-	params := map[string]any{"user_uuid": u.UserUUID}
+	params := make(map[string]any)
+
+	switch {
+	case u.Email != "":
+		params["email"] = u.Email
+	case u.UserUUID != uuid.Nil:
+		params["user_uuid"] = u.UserUUID
+
+	}
+
 	err := repo.ReadOne(u, params)
 	if err != nil {
 		return err
