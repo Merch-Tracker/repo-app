@@ -1,10 +1,18 @@
 package db
 
-func (d *DB) ReadOne(model any, params map[string]any) error {
-	result := d.DB.Model(model).Where("user_uuid = ?", params["user_uuid"]).First(model)
+import "fmt"
 
-	if result.Error != nil {
-		return result.Error
+func (d *DB) ReadOne(model any, params map[string]any) error {
+	query := d.DB.Model(model)
+
+	for k, v := range params {
+		query = query.Where(fmt.Sprintf("%s = ?", k), v)
 	}
+
+	query = query.First(model)
+	if query.Error != nil {
+		return query.Error
+	}
+
 	return nil
 }
