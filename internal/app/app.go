@@ -3,6 +3,7 @@ package app
 import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
+	"repo-app/internal/auth"
 	"repo-app/internal/config"
 	"repo-app/internal/user"
 	"repo-app/pkg/types"
@@ -26,6 +27,7 @@ func (a *App) Init() {
 	// init packages
 	NewRootHandler(a.Router)
 	user.NewUserHandler(a.Router, a.DB)
+	auth.NewAuthHandler(a.Router, a.DB)
 }
 
 func (a *App) Start() error {
