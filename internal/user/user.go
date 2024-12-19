@@ -22,8 +22,8 @@ func NewUserHandler(router *http.ServeMux, repo types.Repo) {
 	}
 
 	router.HandleFunc("GET /user/", handler.Read())
-	router.HandleFunc("PUT /user/{userid}", handler.Update())
-	router.HandleFunc("DELETE /user/{userid}", handler.Delete())
+	router.HandleFunc("PUT /user/", handler.Update())
+	router.HandleFunc("DELETE /user/", handler.Delete())
 }
 
 func (u *UserHandler) Read() http.HandlerFunc {
