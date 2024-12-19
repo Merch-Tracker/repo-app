@@ -12,7 +12,7 @@ type JWT struct {
 }
 
 type Data struct {
-	UserUUID uuid.UUID
+	UserID uuid.UUID
 }
 
 type TokenResponse struct {
@@ -45,5 +45,12 @@ func (j *JWT) Parse(token string) (*Data, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Data{UserUUID: parse.Claims.(jwt.MapClaims)["userID"].(uuid.UUID)}, nil
+
+	strId := parse.Claims.(jwt.MapClaims)["userID"].(string)
+	id, err := uuid.Parse(strId)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Data{UserID: id}, nil
 }

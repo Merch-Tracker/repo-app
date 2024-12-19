@@ -1,7 +1,6 @@
 package user
 
 import (
-	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"repo-app/pkg/helpers"
@@ -22,21 +21,16 @@ func NewUserHandler(router *http.ServeMux, repo types.Repo) {
 		log.Fatal("Migration error", err)
 	}
 
-	router.HandleFunc("GET /user/{userid}", handler.Read())
+	router.HandleFunc("GET /user/", handler.Read())
 	router.HandleFunc("PUT /user/{userid}", handler.Update())
 	router.HandleFunc("DELETE /user/{userid}", handler.Delete())
 }
 
 func (u *UserHandler) Read() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId, err := helpers.GetUUID(&w, r, "userid")
-		if err != nil || userId == uuid.Nil {
-			return
-		}
-
 		readUser := &User{}
-		readUser.UserUUID = userId
-		err = readUser.ReadOne(u.repo)
+		readUser.UserUUID = helpers.GetUUID(r)
+		err := readUser.ReadOne(u.repo)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			log.WithField("msg", err).Error("Read user")
@@ -56,11 +50,6 @@ func (u *UserHandler) Read() http.HandlerFunc {
 
 func (u *UserHandler) Update() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId, err := helpers.GetUUID(&w, r, "userid")
-		if err != nil || userId == uuid.Nil {
-			return
-		}
-
 		body, err := helpers.ReadBody(&w, r)
 		if err != nil {
 			return
@@ -72,7 +61,7 @@ func (u *UserHandler) Update() http.HandlerFunc {
 			return
 		}
 
-		updateUser.UserUUID = userId
+		updateUser.UserUUID = helpers.GetUUID(r)
 		err = updateUser.Update(u.repo)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -87,14 +76,8 @@ func (u *UserHandler) Update() http.HandlerFunc {
 
 func (u *UserHandler) Delete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userId, err := helpers.GetUUID(&w, r, "userid")
-		if err != nil || userId == uuid.Nil {
-			return
-		}
-
-		deleteUser := &User{}
-		deleteUser.UserUUID = userId
-		err = deleteUser.Delete(u.repo)
+		deleteUser := &User{UserUUID: helpers.GetUUID(r)}
+		err := deleteUser.Delete(u.repo)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Error("Delete user")

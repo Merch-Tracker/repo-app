@@ -5,6 +5,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
+	"repo-app/pkg/jwt"
+	"repo-app/pkg/types"
 )
 
 func ReadBody(w *http.ResponseWriter, r *http.Request) ([]byte, error) {
@@ -17,13 +19,6 @@ func ReadBody(w *http.ResponseWriter, r *http.Request) ([]byte, error) {
 	return body, nil
 }
 
-func GetUUID(w *http.ResponseWriter, r *http.Request, pathValue string) (uuid.UUID, error) {
-	pathId := r.PathValue(pathValue)
-	id, err := uuid.Parse(pathId)
-	if err != nil {
-		(*w).WriteHeader(http.StatusBadRequest)
-		log.WithField("path value", pathId).Error("Parse user id")
-		return uuid.Nil, err
-	}
-	return id, nil
+func GetUUID(r *http.Request) uuid.UUID {
+	return r.Context().Value(types.UserDataKey).(*jwt.Data).UserID
 }
