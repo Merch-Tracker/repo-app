@@ -6,20 +6,20 @@ import (
 	"net/http"
 )
 
-func SerializeJSON(w http.ResponseWriter, v interface{}) ([]byte, error) {
+func SerializeJSON(w *http.ResponseWriter, v interface{}) ([]byte, error) {
 	marshal, err := json.Marshal(v)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		(*w).WriteHeader(http.StatusInternalServerError)
 		log.WithField("msg", err).Error("Serialize error")
 		return nil, err
 	}
 	return marshal, nil
 }
 
-func DeserializeJSON(w http.ResponseWriter, data []byte, s interface{}) error {
+func DeserializeJSON(w *http.ResponseWriter, data []byte, s interface{}) error {
 	err := json.Unmarshal(data, &s)
 	if err != nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
+		(*w).WriteHeader(http.StatusUnprocessableEntity)
 		log.WithField("msg", err).Error("Deserialize error")
 		return err
 	}
