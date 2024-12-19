@@ -14,7 +14,7 @@ func ReadBody(w http.ResponseWriter, r *http.Request) ([]byte, error) {
 		log.Error("Request error", err)
 		return nil, err
 	}
-	return body, err
+	return body, nil
 }
 
 func GetUUID(w http.ResponseWriter, r *http.Request, pathValue string) (uuid.UUID, error) {
@@ -25,5 +25,5 @@ func GetUUID(w http.ResponseWriter, r *http.Request, pathValue string) (uuid.UUI
 		log.WithField("path value", pathId).Error("Parse user id")
 		return uuid.Nil, err
 	}
-	return id, err
+	return id, nil
 }
