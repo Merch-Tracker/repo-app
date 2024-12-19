@@ -5,6 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"repo-app/internal/config"
+	"repo-app/pkg/middleware"
 )
 
 type Server struct {
@@ -25,7 +26,7 @@ func NewServer(c *config.Config, router *http.ServeMux) *Server {
 func (s *Server) Run() error {
 	server := &http.Server{
 		Addr:    s.Addr,
-		Handler: s.Router,
+		Handler: middleware.Auth(s.Router),
 	}
 
 	err := server.ListenAndServe()
