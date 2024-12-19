@@ -1,26 +1,29 @@
 package types
 
-// ValidationError Errors
+// Errors
 const (
 	ValidationError     = "Validation failed"
 	UserExists          = "User already exists"
 	UserCreateFailed    = "User creation failed"
 	LoginUserReadFailed = "Login user read failed"
-	JwtCreateError      = "Jwt creation failed"
+	PasswordHashErr     = "Password hashing failed"
 )
 
-// Errors
-const (
-	PasswordHashErr = "Password hashing failed"
-)
-
-// ReadBody Debug messages
+// Debug messages
 const (
 	Deserialized = "Deserializing"
 	ReadBody     = "Read request body"
 )
 
-// LoginSuccess Success messages
+// Success messages
 const (
 	LoginSuccess = "Login success"
+)
+
+// JWT handling and context messages
+const (
+	UserDataKey    = "userData"
+	TokenRecieved  = "Token recieved"
+	TokenParsed    = "Token parsed"
+	JwtCreateError = "Jwt creation failed"
 )

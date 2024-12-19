@@ -5,6 +5,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"repo-app/pkg/jwt"
+	"repo-app/pkg/types"
 	"strings"
 )
 
@@ -23,12 +24,12 @@ func Auth(next http.Handler) http.Handler {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			log.WithField("route", r.RequestURI).Info("Unauthorized")
+			log.WithField("route", r.RequestURI).Info(http.StatusText(http.StatusUnauthorized))
 			return
 		}
 
 		token := strings.TrimPrefix(authHeader, "Bearer ")
-		log.WithField("token", token).Debug("Token received")
+		log.WithField("token", token).Debug(types.TokenRecieved)
 
 		data, err := jwt.NewJWT(jwt.JWTSecret).Parse(token)
 		if err != nil {
@@ -36,9 +37,9 @@ func Auth(next http.Handler) http.Handler {
 			log.Error("Error parsing token")
 			return
 		}
-		log.WithField("data", data).Debug("Token parsed")
+		log.WithField("data", data).Debug(types.TokenParsed)
 
-		ctx := context.WithValue(r.Context(), "userData", data)
+		ctx := context.WithValue(r.Context(), types.UserDataKey, data)
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)
