@@ -16,3 +16,18 @@ func (d *DB) ReadOne(model any, params map[string]any) error {
 
 	return nil
 }
+
+func (d *DB) ReadMany(model any, params map[string]any) error {
+	query := d.DB.Model(model)
+
+	for k, v := range params {
+		query = query.Where(fmt.Sprintf("%s = ?", k), v)
+	}
+
+	query = query.Find(model)
+	if query.Error != nil {
+		return query.Error
+	}
+
+	return nil
+}
