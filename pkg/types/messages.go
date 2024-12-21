@@ -28,6 +28,12 @@ const (
 	JwtCreateError = "Jwt creation failed"
 )
 
+// User messages
+const (
+	UserReadSuccess = "User read success"
+	UserReadError   = "User read failed"
+)
+
 // Merchandise messages
 const (
 	MerchMigrationSuccess = "Merchandise migration success"
