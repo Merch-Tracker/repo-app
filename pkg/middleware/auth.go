@@ -16,14 +16,13 @@ var unprotectedRoutes = map[string]struct{}{
 
 func Auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		log.WithFields(log.Fields{
-			"token": r.Header.Get("Authorization"),
-		}).Debug("MW Auth")
 		if _, ok := unprotectedRoutes[r.URL.Path]; ok {
+			log.WithField("type", "Unprotected").Debug("MW Auth")
 			next.ServeHTTP(w, r)
 			return
 		}
 
+		log.WithField("type", "Protected").Debug("MW Auth")
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
