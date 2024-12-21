@@ -24,9 +24,16 @@ func NewServer(c *config.Config, router *http.ServeMux) *Server {
 }
 
 func (s *Server) Run() error {
+	mw := []func(http.Handler) http.Handler{
+		middleware.CORS,
+		middleware.Auth,
+	}
+
+	handler := s.mwChain(s.Router, mw)
+
 	server := &http.Server{
 		Addr:    s.Addr,
-		Handler: middleware.Auth(s.Router),
+		Handler: handler,
 	}
 
 	err := server.ListenAndServe()
@@ -35,4 +42,11 @@ func (s *Server) Run() error {
 	}
 
 	return nil
+}
+
+func (s *Server) mwChain(handler http.Handler, mw []func(http.Handler) http.Handler) http.Handler {
+	for i := len(mw) - 1; i >= 0; i-- {
+		handler = mw[i](handler)
+	}
+	return handler
 }
