@@ -26,19 +26,14 @@ func Migrate(repo Repo) error {
 
 // Create Creates new user record in repository using RegisterUser payload.
 func (r *RegisterUser) Create(repo Repo) error {
-	hashedPassword, err := hashPassword(r.Password)
-	if err != nil {
-		return err
-	}
-
 	usr := User{
 		UserUUID: uuid.New(),
 		Username: r.Username,
-		Password: hashedPassword,
+		Password: r.Password,
 		Email:    r.Email,
 	}
 
-	err = repo.Create(usr)
+	err := repo.Create(usr)
 	if err != nil {
 		return err
 	}

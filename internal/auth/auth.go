@@ -9,6 +9,7 @@ import (
 	"repo-app/internal/user"
 	"repo-app/pkg/helpers"
 	"repo-app/pkg/jwt"
+	"repo-app/pkg/password"
 	"repo-app/pkg/types"
 	"strings"
 )
@@ -54,14 +55,20 @@ func (a *Auth) Login() http.HandlerFunc {
 		}
 
 		usr := user.User{
-			Password: loginUser.Password,
-			Email:    loginUser.Email,
+			Email: loginUser.Email,
 		}
 
 		err = usr.ReadOne(a.repo)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			log.WithField("error", err).Info(types.LoginUserReadFailed)
+			return
+		}
+
+		err = password.ComparePasswords(usr.Password, loginUser.Password)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			log.Info(types.PasswordCompareError)
 			return
 		}
 
@@ -110,10 +117,18 @@ func (a *Auth) Register() http.HandlerFunc {
 			return
 		}
 
+		registerUser.Password, err = password.HashPassword(registerUser.Password)
+		if err != nil {
+			http.Error(w, types.PasswordHashError, http.StatusInternalServerError)
+			log.WithField("error", err).Error(types.PasswordHashError)
+			return
+		}
+
 		err = registerUser.Create(a.repo)
 		switch {
 		case err == nil:
 			w.WriteHeader(http.StatusCreated)
+			log.Info(types.UserCreateSuccess)
 			return
 
 		case strings.Contains(err.Error(), "duplicate key value violates unique constraint"):
@@ -123,7 +138,7 @@ func (a *Auth) Register() http.HandlerFunc {
 
 		default:
 			w.WriteHeader(http.StatusInternalServerError)
-			log.WithField("msg", err).Error(types.UserCreateFailed)
+			log.WithField("msg", err).Error(types.UserCreateError)
 			return
 		}
 	}
