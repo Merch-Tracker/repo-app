@@ -4,15 +4,19 @@ package types
 const (
 	ValidationError     = "Validation failed"
 	UserExists          = "User already exists"
-	UserCreateFailed    = "User creation failed"
 	LoginUserReadFailed = "Login user read failed"
-	PasswordHashErr     = "Password hashing failed"
 )
 
 // Debug messages
 const (
 	Deserialized = "Deserializing"
 	ReadBody     = "Read request body"
+)
+
+// Password messages
+const (
+	PasswordHashError    = "Password hashing failed"
+	PasswordCompareError = "Password comparison failed"
 )
 
 // Success messages
@@ -30,8 +34,10 @@ const (
 
 // User messages
 const (
-	UserReadSuccess = "User read success"
-	UserReadError   = "User read failed"
+	UserCreateSuccess = "User created successfully"
+	UserCreateError   = "User creation failed"
+	UserReadSuccess   = "User read success"
+	UserReadError     = "User read failed"
 )
 
 // Merchandise messages
