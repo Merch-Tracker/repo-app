@@ -19,6 +19,19 @@ func ReadBody(w *http.ResponseWriter, r *http.Request) ([]byte, error) {
 	return body, nil
 }
 
-func GetUUID(r *http.Request) uuid.UUID {
+func GetUserUuid(r *http.Request) uuid.UUID {
 	return r.Context().Value(types.UserDataKey).(*jwt.Data).UserID
+}
+
+func GetPathUuid(w *http.ResponseWriter, r *http.Request, pathValue string) (uuid.UUID, error) {
+	pathUuid, err := uuid.Parse(r.PathValue(pathValue))
+	if err != nil {
+		(*w).WriteHeader(http.StatusBadRequest)
+		log.WithFields(log.Fields{
+			"error": err,
+			"uuid":  pathValue,
+		}).Error("Request error")
+		return uuid.Nil, err
+	}
+	return pathUuid, nil
 }

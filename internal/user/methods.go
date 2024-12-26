@@ -9,7 +9,7 @@ import (
 
 func (u *UserHandler) Read() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		readUser := &User{UserUUID: helpers.GetUUID(r)}
+		readUser := &User{UserUUID: helpers.GetUserUuid(r)}
 		payload := &Personal{}
 
 		err := readUser.ReadOnePayload(u.repo, payload)
@@ -44,7 +44,7 @@ func (u *UserHandler) Update() http.HandlerFunc {
 			return
 		}
 
-		updateUser.UserUUID = helpers.GetUUID(r)
+		updateUser.UserUUID = helpers.GetUserUuid(r)
 		err = updateUser.Update(u.repo)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -59,7 +59,7 @@ func (u *UserHandler) Update() http.HandlerFunc {
 
 func (u *UserHandler) Delete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		deleteUser := &User{UserUUID: helpers.GetUUID(r)}
+		deleteUser := &User{UserUUID: helpers.GetUserUuid(r)}
 		err := deleteUser.Delete(u.repo)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
