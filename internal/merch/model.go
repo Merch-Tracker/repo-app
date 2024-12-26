@@ -3,20 +3,32 @@ package merch
 import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"time"
 )
 
 type Merch struct {
 	gorm.Model
 	MerchUuid uuid.UUID
 	OwnerUuid uuid.UUID
-	Name      string `validate:"required,min=1,max=100"`
-	Link      string
+	Name      string `json:"name" validate:"required,min=1,max=100"`
+	Link      string `json:"link"`
 }
 
 type MerchInfo struct {
 	gorm.Model
 	MerchUuid uuid.UUID
 	Price     uint
+}
+
+type MerchResponse struct {
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	MerchUuid uuid.UUID
+	OwnerUuid uuid.UUID
+	Name      string `json:"name" validate:"required,min=1,max=100"`
+	Link      string `json:"link"`
+	OldPrice  uint   `json:"old_price"`
+	NewPrice  uint   `json:"new_price"`
 }
 
 func MigrateMerch(repo Repo) error {
@@ -55,11 +67,11 @@ func (m *Merch) ReadOne(repo Repo) error {
 	return nil
 }
 
-func (m *Merch) ReadMany(repo Repo) (*[]Merch, error) {
+func (m *Merch) ReadMany(repo Repo) (*[]MerchResponse, error) {
 	params := make(map[string]any)
 	params["owner_uuid"] = m.OwnerUuid
 
-	allMerch := &[]Merch{}
+	allMerch := &[]MerchResponse{}
 
 	err := repo.ReadMany(allMerch, params)
 	if err != nil {
@@ -71,6 +83,7 @@ func (m *Merch) ReadMany(repo Repo) (*[]Merch, error) {
 func (m *Merch) Update(repo Repo) error {
 	params := make(map[string]any)
 	params["owner_uuid"] = m.OwnerUuid
+	params["merch_uuid"] = m.MerchUuid
 
 	err := repo.Update(m, params)
 	if err != nil {
@@ -82,6 +95,7 @@ func (m *Merch) Update(repo Repo) error {
 func (m *Merch) Delete(repo Repo) error {
 	params := make(map[string]any)
 	params["owner_uuid"] = m.OwnerUuid
+	params["merch_uuid"] = m.MerchUuid
 
 	err := repo.Delete(m, params)
 	if err != nil {
