@@ -1,6 +1,8 @@
 package merch
 
 import (
+	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"repo-app/pkg/helpers"
@@ -10,12 +12,16 @@ import (
 type Repo types.Repo
 
 type MerchHandler struct {
-	repo Repo
+	repo     Repo
+	validate *validator.Validate
 }
 
 func NewMerchHandler(router *http.ServeMux, repo Repo) {
 	var err error
-	handler := &MerchHandler{repo: repo}
+	handler := &MerchHandler{
+		repo:     repo,
+		validate: validator.New(),
+	}
 
 	err = MigrateMerch(repo)
 	if err != nil {
@@ -32,8 +38,8 @@ func NewMerchHandler(router *http.ServeMux, repo Repo) {
 	router.HandleFunc("POST /merch", handler.New())
 	router.HandleFunc("GET /merch/", handler.ReadOne())
 	router.HandleFunc("GET /merch/all", handler.ReadAll())
-	router.HandleFunc("PUT /merch", handler.Update())
-	router.HandleFunc("DELETE /merch", handler.Delete())
+	router.HandleFunc("PUT /merch/{merch_uuid}", handler.Update())
+	router.HandleFunc("DELETE /merch/{merch_uuid}", handler.Delete())
 }
 
 func (m *MerchHandler) New() http.HandlerFunc {
@@ -49,7 +55,18 @@ func (m *MerchHandler) New() http.HandlerFunc {
 			return
 		}
 
-		newMerch.OwnerUuid = helpers.GetUUID(r)
+		err = m.validate.Struct(newMerch)
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			for _, err = range err.(validator.ValidationErrors) {
+				log.WithField("error", err).Info(types.ValidationError)
+			}
+			return
+		}
+
+		newMerch.OwnerUuid = helpers.GetUserUuid(r)
+		newMerch.MerchUuid = uuid.New()
+
 		err = newMerch.Create(m.repo)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -65,7 +82,7 @@ func (m *MerchHandler) New() http.HandlerFunc {
 func (m *MerchHandler) ReadOne() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		readMerch := Merch{}
-		readMerch.OwnerUuid = helpers.GetUUID(r)
+		readMerch.OwnerUuid = helpers.GetUserUuid(r)
 
 		err := readMerch.ReadOne(m.repo)
 		if err != nil {
@@ -90,7 +107,7 @@ func (m *MerchHandler) ReadOne() http.HandlerFunc {
 
 func (m *MerchHandler) ReadAll() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		merch := Merch{OwnerUuid: helpers.GetUUID(r)}
+		merch := Merch{OwnerUuid: helpers.GetUserUuid(r)}
 
 		allMerch, err := merch.ReadMany(m.repo)
 		if err != nil {
@@ -120,13 +137,20 @@ func (m *MerchHandler) Update() http.HandlerFunc {
 			return
 		}
 
+		merchUuid, err := helpers.GetPathUuid(&w, r, "merch_uuid")
+		if err != nil {
+			return
+		}
+
 		merch := Merch{}
 		err = helpers.DeserializeJSON(&w, body, &merch)
 		if err != nil {
 			return
 		}
 
-		merch.OwnerUuid = helpers.GetUUID(r)
+		merch.OwnerUuid = helpers.GetUserUuid(r)
+		merch.MerchUuid = merchUuid
+
 		err = merch.Update(m.repo)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -141,9 +165,17 @@ func (m *MerchHandler) Update() http.HandlerFunc {
 
 func (m *MerchHandler) Delete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		merch := Merch{OwnerUuid: helpers.GetUUID(r)}
+		merchUuid, err := helpers.GetPathUuid(&w, r, "merch_uuid")
+		if err != nil {
+			return
+		}
 
-		err := merch.Delete(m.repo)
+		merch := Merch{
+			OwnerUuid: helpers.GetUserUuid(r),
+			MerchUuid: merchUuid,
+		}
+
+		err = merch.Delete(m.repo)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			log.WithField("error", err).Error(types.MerchDeleteError)
