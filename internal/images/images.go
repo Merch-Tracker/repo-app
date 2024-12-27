@@ -2,6 +2,7 @@ package images
 
 import (
 	log "github.com/sirupsen/logrus"
+	"io"
 	"net/http"
 	"repo-app/pkg/helpers"
 	"repo-app/pkg/types"
@@ -26,20 +27,36 @@ func NewImageHandler(router *http.ServeMux, repo Repo) {
 
 func (i *ImageHandler) Upload() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := helpers.ReadBody(&w, r)
+		err := r.ParseMultipartForm(10 << 20)
 		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			log.WithField("error", err).Error("Error receiving image")
+			return
+		}
+
+		file, _, err := r.FormFile("Data")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			log.WithField("error", err).Error("Error receiving image")
+			return
+		}
+		defer file.Close()
+
+		data, err := io.ReadAll(file)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			log.WithField("error", err).Error("Error receiving image")
 			return
 		}
 
 		merchUuid, err := helpers.GetPathUuid(&w, r, "merch_uuid")
+		if err != nil {
+			return
+		}
 
 		img := &Image{
 			MerchUuid: merchUuid,
-		}
-
-		err = helpers.DeserializeJSON(&w, body, img)
-		if err != nil {
-			return
+			Data:      data,
 		}
 
 		err = img.Upload(i.repo)

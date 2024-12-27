@@ -7,8 +7,8 @@ import (
 
 type Image struct {
 	gorm.Model
-	MerchUuid uuid.UUID
-	Data      []byte
+	MerchUuid uuid.UUID `json:"MerchUuid"`
+	Data      []byte    `json:"Data"`
 }
 
 func MigrateImage(repo Repo) error {
