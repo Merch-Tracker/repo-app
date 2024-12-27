@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"repo-app/internal/auth"
 	"repo-app/internal/config"
+	"repo-app/internal/images"
 	"repo-app/internal/merch"
 	"repo-app/internal/user"
 	"repo-app/pkg/types"
@@ -30,6 +31,7 @@ func (a *App) Init() {
 	user.NewUserHandler(a.Router, a.DB)
 	auth.NewAuthHandler(a.Router, a.DB)
 	merch.NewMerchHandler(a.Router, a.DB)
+	images.NewImageHandler(a.Router, a.DB)
 }
 
 func (a *App) Start() error {
