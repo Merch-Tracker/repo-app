@@ -26,3 +26,14 @@ func (i *Image) Upload(repo Repo) error {
 	}
 	return nil
 }
+
+func (i *Image) Fetch(repo Repo) error {
+	params := make(map[string]any)
+	params["merch_uuid"] = i.MerchUuid
+
+	err := repo.ReadOne(i, params)
+	if err != nil {
+		return err
+	}
+	return nil
+}
