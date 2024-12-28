@@ -81,11 +81,13 @@ func (i *ImageHandler) SendImage() http.HandlerFunc {
 
 		img := &Image{MerchUuid: merchUuid}
 		err = img.Fetch(i.repo)
-		if err.Error() == "record not found" {
-			w.WriteHeader(http.StatusNoContent)
-			log.Debug("Requested image doesn't exist")
-			return
-		} else if err != nil {
+		if err != nil {
+			if err.Error() == "record not found" {
+				w.WriteHeader(http.StatusNoContent)
+				log.WithField("error", err).Info("Requested image does not exist")
+				return
+			}
+
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			log.WithField("error", err).Error("Error getting image from DB")
 			return
