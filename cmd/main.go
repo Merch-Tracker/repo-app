@@ -25,11 +25,5 @@ func main() {
 	}
 
 	appl.Init()
-
-	err = appl.Start()
-	if err != nil {
-		log.WithFields(log.Fields{
-			"error": err,
-		}).Fatal("Application start error")
-	}
+	appl.Start()
 }

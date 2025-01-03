@@ -2,6 +2,8 @@ package app
 
 import (
 	log "github.com/sirupsen/logrus"
+	"google.golang.org/grpc"
+	"net"
 	"net/http"
 	"repo-app/internal/auth"
 	"repo-app/internal/config"
@@ -15,12 +17,14 @@ type App struct {
 	Config     *config.Config
 	Router     *http.ServeMux
 	HttpServer *Server
+	GrpcServer *grpc.Server
 	DB         types.Repo
 }
 
 func (a *App) Init() {
 	a.Router = http.NewServeMux()
-	a.HttpServer = NewServer(a.Config, a.Router)
+	a.HttpServer = NewHttpServer(a.Config, a.Router)
+	a.GrpcServer = NewGrpcServer(a.DB)
 
 	if a.DB == nil {
 		log.Fatal("No database provided")
@@ -34,11 +38,28 @@ func (a *App) Init() {
 	images.NewImageHandler(a.Router, a.DB)
 }
 
-func (a *App) Start() error {
+func (a *App) Start() {
 	log.Info("Starting application")
-	err := a.HttpServer.Run()
-	if err != nil {
-		return err
-	}
-	return nil
+
+	go func() {
+		if err := a.HttpServer.Run(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+	log.Debug("HTTP Server started")
+
+	go func() {
+		listener, err := net.Listen("tcp", net.JoinHostPort(a.Config.HttpConf.Host, a.Config.HttpConf.GrpcPort))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = a.GrpcServer.Serve(listener)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+	log.Debug("gRPC Server started")
+
+	select {}
 }
