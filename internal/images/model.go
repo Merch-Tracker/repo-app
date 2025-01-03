@@ -2,12 +2,10 @@ package images
 
 import (
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 type Image struct {
-	gorm.Model
-	MerchUuid uuid.UUID `json:"MerchUuid"`
+	MerchUuid uuid.UUID `json:"MerchUuid" gorm:"type:uuid;primaryKey;"`
 	Data      []byte    `json:"Data"`
 }
 
@@ -20,7 +18,7 @@ func MigrateImage(repo Repo) error {
 }
 
 func (i *Image) Upload(repo Repo) error {
-	err := repo.Create(i)
+	err := repo.CreateOrRewrite(i)
 	if err != nil {
 		return err
 	}
