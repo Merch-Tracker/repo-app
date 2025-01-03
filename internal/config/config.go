@@ -3,14 +3,15 @@ package config
 import "os"
 
 type Config struct {
-	HttpConf HttpConfig
+	HttpConf ServerConfig
 	DBConf   DBConfig
 }
 
-type HttpConfig struct {
-	Host   string
-	Port   string
-	LogLvl string
+type ServerConfig struct {
+	Host     string
+	HttpPort string
+	GrpcPort string
+	LogLvl   string
 }
 
 type DBConfig struct {
@@ -20,15 +21,16 @@ type DBConfig struct {
 	Password string
 	SSLMode  string
 	DBName   string
-	LogLvl   string
+	LogLevel string
 }
 
 func NewConfig() *Config {
 	return &Config{
-		HttpConf: HttpConfig{
-			Host:   getEnv("HTTP_HOST", "localhost"),
-			Port:   getEnv("HTTP_PORT", "9010"),
-			LogLvl: getEnv("HTTP_LOGLVL", "Debug"),
+		HttpConf: ServerConfig{
+			Host:     getEnv("HTTP_HOST", "localhost"),
+			HttpPort: getEnv("HTTP_PORT", "9010"),
+			GrpcPort: getEnv("GRPC_PORT", "9050"),
+			LogLvl:   getEnv("HTTP_LOGLEVEL", "Debug"),
 		},
 
 		DBConf: DBConfig{
@@ -38,7 +40,7 @@ func NewConfig() *Config {
 			Password: getEnv("DB_PASSWORD", "test_parser"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 			DBName:   getEnv("DB_NAME", "parser"),
-			LogLvl:   getEnv("DB_LOGLVL", "Info"),
+			LogLevel: getEnv("DB_LOGLEVEL", "Info"),
 		},
 	}
 }
