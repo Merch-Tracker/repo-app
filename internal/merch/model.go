@@ -8,10 +8,14 @@ import (
 
 type Merch struct {
 	gorm.Model
-	MerchUuid uuid.UUID
-	OwnerUuid uuid.UUID
-	Name      string `json:"name" validate:"required,min=1,max=100"`
-	Link      string `json:"link"`
+	MerchUuid      uuid.UUID
+	OwnerUuid      uuid.UUID
+	Name           string `json:"name" validate:"required,min=1,max=100"`
+	Link           string `json:"link"`
+	ParseTag       string `json:"parse_tag"`
+	ParseSubstring string `json:"parse_substring"`
+	CookieValues   string `json:"cookie_values"`
+	Separator      string `json:"separator"`
 }
 
 type MerchInfo struct {
@@ -21,14 +25,18 @@ type MerchInfo struct {
 }
 
 type MerchResponse struct {
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	MerchUuid uuid.UUID
-	OwnerUuid uuid.UUID
-	Name      string `json:"name" validate:"required,min=1,max=100"`
-	Link      string `json:"link"`
-	OldPrice  uint   `json:"old_price"`
-	NewPrice  uint   `json:"new_price"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+	MerchUuid      uuid.UUID
+	OwnerUuid      uuid.UUID
+	Name           string `json:"name" validate:"required,min=1,max=100"`
+	Link           string `json:"link"`
+	OldPrice       uint   `json:"old_price"`
+	NewPrice       uint   `json:"new_price"`
+	ParseTag       string `json:"parse_tag"`
+	ParseSubstring string `json:"parse_substring"`
+	CookieValues   string `json:"cookie_values"`
+	Separator      string `json:"separator"`
 }
 
 func MigrateMerch(repo Repo) error {
