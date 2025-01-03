@@ -55,3 +55,12 @@ func (d *DB) ReadMany(payload any, params map[string]any) error {
 
 	return nil
 }
+
+func (d *DB) Read(model, payload any) error {
+	query := d.DB.Model(model).Find(payload)
+	err := query.Error
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -15,3 +15,21 @@ func (d *DB) Create(payload any) error {
 	}
 	return nil
 }
+
+func (d *DB) CreateOrRewrite(payload any) error {
+	err := d.DB.Save(payload).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (d *DB) Save(payload any) error {
+	err := d.DB.Create(payload).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
