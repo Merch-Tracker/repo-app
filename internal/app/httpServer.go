@@ -13,9 +13,9 @@ type Server struct {
 	Router *http.ServeMux
 }
 
-func NewServer(c *config.Config, router *http.ServeMux) *Server {
-	addr := fmt.Sprintf("%s:%s", c.HttpConf.Host, c.HttpConf.Port)
-	log.WithFields(log.Fields{"Address": addr}).Debug("Server created")
+func NewHttpServer(c *config.Config, router *http.ServeMux) *Server {
+	addr := fmt.Sprintf("%s:%s", c.HttpConf.Host, c.HttpConf.HttpPort)
+	log.WithFields(log.Fields{"Address": addr}).Debug("HTTP Server created")
 
 	return &Server{
 		Addr:   addr,
