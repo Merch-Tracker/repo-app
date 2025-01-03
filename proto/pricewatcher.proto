@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option go_package = "localhost:9000/yourusername/pricewatcher;pricewatcher";
+
+package pricewatcher;
+
+import "google/protobuf/empty.proto";
+
+message MerchRequest {
+  string merch_uuid = 1;
+  string link = 2;
+  string parse_tag = 3;
+  string parse_subs  = 4;
+  string cookie_values = 5;
+  string separator = 6;
+}
+
+message MerchResponse {
+  string merch_uuid = 1;
+  uint32 price = 2;
+}
+
+service PriceWatcher {
+  rpc GetMerch(google.protobuf.Empty) returns (stream MerchRequest);
+  rpc PostMerch(stream MerchResponse) returns (google.protobuf.Empty);
+}
