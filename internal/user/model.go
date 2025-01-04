@@ -33,7 +33,7 @@ func (r *RegisterUser) Create(repo Repo) error {
 		Email:    r.Email,
 	}
 
-	err := repo.Create(usr)
+	err := repo.Create(&usr)
 	if err != nil {
 		return err
 	}
