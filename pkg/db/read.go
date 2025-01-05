@@ -33,20 +33,18 @@ func (d *DB) ReadOnePayload(model any, payload any, params map[string]any) error
 }
 
 func (d *DB) ReadMany(payload any, params map[string]any) error {
-	query := d.DB.Raw(`
-		SELECT
-		m.name, m.link, m.merch_uuid, m.owner_uuid, m.created_at, m.updated_at,
+	query := d.DB.Table("merches AS m").
+		Select(`m.name, m.link, m.merch_uuid, m.owner_uuid, m.created_at, m.updated_at,
+		m.parse_tag, m.parse_substring, m.cookie_values, m.separator,
 		(SELECT price FROM merch_infos mi1 WHERE mi1.merch_uuid = m.merch_uuid ORDER BY mi1.id DESC LIMIT 1) AS new_price,
-		(SELECT price FROM merch_infos mi2 WHERE mi2.merch_uuid = m.merch_uuid ORDER BY mi2.id DESC OFFSET 1 LIMIT 1) AS old_price
-		FROM merches AS m
-		WHERE m.deleted_at IS NULL;
-	`)
+		(SELECT price FROM merch_infos mi2 WHERE mi2.merch_uuid = m.merch_uuid ORDER BY mi2.id DESC OFFSET 1 LIMIT 1) AS old_price`).
+		Where("m.deleted_at IS NULL")
 
 	for k, v := range params {
 		query = query.Where(fmt.Sprintf("%s = ?", k), v)
 	}
 
-	query = query.Scan(payload)
+	query = query.Find(payload)
 	err := query.Error
 
 	if err != nil {
