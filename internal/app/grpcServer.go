@@ -32,17 +32,21 @@ func (s *pwServer) GetMerch(req *emptypb.Empty, stream pb.PriceWatcher_GetMerchS
 	if err != nil {
 		return err
 	}
-	log.WithField("merchList", merchList).Debug("gRPC | Merch read")
 
 	for _, m := range merchList {
 		response := &pb.MerchRequest{
-			MerchUuid: m.MerchUuid.String(),
-			Link:      m.Link,
+			MerchUuid:    m.MerchUuid.String(),
+			Link:         m.Link,
+			ParseTag:     m.ParseTag,
+			ParseSubs:    m.ParseSubstring,
+			CookieValues: m.CookieValues,
+			Separator:    m.Separator,
 		}
 		err := stream.Send(response)
 		if err != nil {
 			return err
 		}
+		log.WithField("response", response).Debug("gRPC | Merch read")
 	}
 	return nil
 }
