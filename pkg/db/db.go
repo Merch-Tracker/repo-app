@@ -5,7 +5,7 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"repo-app/internal/config"
+	"repo-app/config"
 )
 
 type DB struct {
