@@ -2,8 +2,8 @@ package main
 
 import (
 	log "github.com/sirupsen/logrus"
+	"repo-app/config"
 	"repo-app/internal/app"
-	"repo-app/internal/config"
 	"repo-app/internal/logging"
 	"repo-app/pkg/db"
 )

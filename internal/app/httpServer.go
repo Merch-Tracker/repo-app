@@ -4,7 +4,7 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"net/http"
-	"repo-app/internal/config"
+	"repo-app/config"
 	"repo-app/pkg/middleware"
 )
 

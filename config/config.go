@@ -34,10 +34,16 @@ func NewConfig() *Config {
 		},
 
 		DBConf: DBConfig{
-			Host:     getEnv("DB_HOST", "192.168.0.210"),
-			Port:     getEnv("DB_PORT", "5432"),
-			Username: getEnv("DB_USER", "test_parser"),
-			Password: getEnv("DB_PASSWORD", "test_parser"),
+			Port: getEnv("DB_PORT", "5432"),
+
+			Host:     getEnv("DB_HOST", "127.0.0.1"),
+			Username: getEnv("DB_USER", ""),
+			Password: getEnv("DB_PASSWORD", ""),
+
+			//Host:     getEnv("DB_HOST", "192.168.0.210"),
+			//Username: getEnv("DB_USER", "test_parser"),
+			//Password: getEnv("DB_PASSWORD", "test_parser"),
+
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 			DBName:   getEnv("DB_NAME", "parser"),
 			LogLevel: getEnv("DB_LOGLEVEL", "Info"),
