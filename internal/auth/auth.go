@@ -116,6 +116,7 @@ func (a *Auth) Register() http.HandlerFunc {
 			}
 			return
 		}
+		log.Debug("Validated")
 
 		registerUser.Password, err = password.HashPassword(registerUser.Password)
 		if err != nil {
@@ -123,23 +124,22 @@ func (a *Auth) Register() http.HandlerFunc {
 			log.WithField("error", err).Error(types.PasswordHashError)
 			return
 		}
+		log.Debug("Password hashed")
 
 		err = registerUser.Create(a.repo)
-		switch {
-		case err == nil:
-			w.WriteHeader(http.StatusCreated)
-			log.Info(types.UserCreateSuccess)
-			return
+		if err != nil {
+			if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+				w.WriteHeader(http.StatusConflict)
+				log.Error(types.UserExists)
+				return
+			}
 
-		case strings.Contains(err.Error(), "duplicate key value violates unique constraint"):
-			w.WriteHeader(http.StatusConflict)
-			log.Error(types.UserExists)
-			return
-
-		default:
 			w.WriteHeader(http.StatusInternalServerError)
 			log.WithField("msg", err).Error(types.UserCreateError)
 			return
 		}
+
+		w.WriteHeader(http.StatusCreated)
+		log.Info(types.UserCreateSuccess)
 	}
 }
