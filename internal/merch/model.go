@@ -39,6 +39,11 @@ type MerchResponse struct {
 	Separator      string `json:"separator"`
 }
 
+type MerchWithLabels struct {
+	MerchResponse
+	Labels []uuid.UUID `json:"labels"`
+}
+
 func MigrateMerch(repo Repo) error {
 	err := repo.Migrate(Merch{})
 	if err != nil {

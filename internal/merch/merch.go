@@ -1,6 +1,7 @@
 package merch
 
 import (
+	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -33,6 +34,16 @@ func NewMerchHandler(router *http.ServeMux, repo Repo) {
 		log.WithField("model", "MerchInfo").Fatal(types.MerchMigrationError)
 	}
 
+	err = MigrateLabel(repo)
+	if err != nil {
+		log.WithField("model", "Label").Fatal("Label model migration failed")
+	}
+
+	err = MigrateCardLabel(repo)
+	if err != nil {
+		log.WithField("model", "CardLabel").Fatal("Card label model migration failed")
+	}
+
 	log.Info(types.MerchMigrationSuccess)
 
 	router.HandleFunc("POST /merch", handler.New())
@@ -40,6 +51,14 @@ func NewMerchHandler(router *http.ServeMux, repo Repo) {
 	router.HandleFunc("GET /merch/all", handler.ReadAll())
 	router.HandleFunc("PUT /merch/{merch_uuid}", handler.Update())
 	router.HandleFunc("DELETE /merch/{merch_uuid}", handler.Delete())
+
+	router.HandleFunc("POST /label", handler.NewLabel())
+	router.HandleFunc("GET /label", handler.GetLabel())
+	router.HandleFunc("PUT /label/{label_uuid}", handler.UpdateLabel())
+	router.HandleFunc("DELETE /label/{label_uuid}", handler.DeleteLabel())
+
+	router.HandleFunc("POST /alabel", handler.AttachLabel())
+	router.HandleFunc("POST /dlabel", handler.DetachLabel())
 }
 
 func (m *MerchHandler) New() http.HandlerFunc {
@@ -107,8 +126,10 @@ func (m *MerchHandler) ReadOne() http.HandlerFunc {
 
 func (m *MerchHandler) ReadAll() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		merch := Merch{OwnerUuid: helpers.GetUserUuid(r)}
+		owner := helpers.GetUserUuid(r)
+		merch := Merch{OwnerUuid: owner}
 
+		// select all merch
 		allMerch, err := merch.ReadMany(m.repo)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -116,7 +137,30 @@ func (m *MerchHandler) ReadAll() http.HandlerFunc {
 			return
 		}
 
-		response, err := helpers.SerializeJSON(&w, allMerch)
+		//select labels for merch
+		label := CardLabel{OwnerUuid: owner}
+		cardLabels, err := label.ReadAll(m.repo)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.WithField("error", err).Error("Get all labels")
+			return
+		}
+
+		labelList := make(map[uuid.UUID][]uuid.UUID, len(*cardLabels))
+		for _, item := range *cardLabels {
+			labelList[item.MerchUuid] = append(labelList[item.MerchUuid], item.LabelUuid)
+		}
+
+		//composing
+		var composedResponse []MerchWithLabels
+
+		for _, item := range *allMerch {
+			composedResponse = append(composedResponse, MerchWithLabels{item, labelList[item.MerchUuid]})
+		}
+
+		// composed response
+		fmt.Println(composedResponse)
+		response, err := helpers.SerializeJSON(&w, composedResponse)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			log.WithField("error", err).Error(types.MerchSerializeError)
@@ -126,7 +170,7 @@ func (m *MerchHandler) ReadAll() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(response)
-		log.Info(types.MerchReadSuccess)
+		log.WithField("bytes", len(response)).Info(types.MerchReadSuccess)
 	}
 }
 
