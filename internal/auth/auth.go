@@ -65,6 +65,11 @@ func (a *Auth) Login() http.HandlerFunc {
 			return
 		}
 
+		if usr.Verified != true {
+			w.WriteHeader(http.StatusForbidden)
+			log.WithField("user", usr.UserUUID).Warn("Unverified access atempt")
+		}
+
 		err = password.ComparePasswords(usr.Password, loginUser.Password)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
