@@ -14,6 +14,7 @@ type User struct {
 	Username string `gorm:"unique" validate:"required"`
 	Password string `validate:"required"`
 	Email    string `gorm:"unique" validate:"required"`
+	Verified bool
 }
 
 func Migrate(repo Repo) error {
