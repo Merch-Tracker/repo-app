@@ -62,3 +62,18 @@ func (d *DB) Read(model, payload any) error {
 	}
 	return nil
 }
+
+func (d *DB) ReadManySimple(model any, params map[string]any) error {
+	query := d.DB.Model(model)
+
+	for k, v := range params {
+		query = query.Where(fmt.Sprintf("%s = ?", k), v)
+	}
+
+	query = query.Find(model)
+	err := query.Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
