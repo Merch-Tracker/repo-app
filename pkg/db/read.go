@@ -77,3 +77,24 @@ func (d *DB) ReadManySimple(model any, params map[string]any) error {
 	}
 	return nil
 }
+
+func (d *DB) ReadManySubmodel(model any, payload any, params map[string]any) error {
+	query := d.DB.Model(model)
+
+	for k, v := range params {
+		switch k {
+		case "days":
+			query = query.Where("created_at >= ?", v)
+
+		default:
+			query = query.Where(fmt.Sprintf("%s = ?", k), v)
+		}
+	}
+
+	query.Find(payload)
+	err := query.Error
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -12,6 +12,7 @@ type Repo interface {
 	ReadOnePayload(any, any, map[string]any) error
 	ReadManySimple(any, map[string]any) error
 	ReadMany(any, map[string]any) error
+	ReadManySubmodel(any, any, map[string]any) error
 
 	Update(any, map[string]any) error
 
