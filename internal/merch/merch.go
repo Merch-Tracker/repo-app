@@ -59,6 +59,8 @@ func NewMerchHandler(router *http.ServeMux, repo Repo) {
 
 	router.HandleFunc("POST /alabel", handler.AttachLabel())
 	router.HandleFunc("POST /dlabel", handler.DetachLabel())
+
+	router.HandleFunc("GET /prices/{merch_uuid}", handler.GetPriceHistory())
 }
 
 func (m *MerchHandler) New() http.HandlerFunc {
