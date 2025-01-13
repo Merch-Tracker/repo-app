@@ -27,26 +27,22 @@ type DBConfig struct {
 func NewConfig() *Config {
 	return &Config{
 		HttpConf: ServerConfig{
-			Host:     getEnv("HTTP_HOST", "localhost"),
+			Host:     getEnv("HTTP_HOST", "0.0.0.0"),
 			HttpPort: getEnv("HTTP_PORT", "9010"),
 			GrpcPort: getEnv("GRPC_PORT", "9050"),
 			LogLvl:   getEnv("HTTP_LOGLEVEL", "Debug"),
 		},
 
 		DBConf: DBConfig{
-			Port: getEnv("DB_PORT", "5432"),
+			Port: getEnv("DB_PORT", ""),
 
-			Host:     getEnv("DB_HOST", "127.0.0.1"),
+			Host:     getEnv("DB_HOST", ""),
 			Username: getEnv("DB_USER", ""),
 			Password: getEnv("DB_PASSWORD", ""),
 
-			//Host:     getEnv("DB_HOST", "192.168.0.210"),
-			//Username: getEnv("DB_USER", "test_parser"),
-			//Password: getEnv("DB_PASSWORD", "test_parser"),
-
-			SSLMode:  getEnv("DB_SSLMODE", "disable"),
-			DBName:   getEnv("DB_NAME", "parser"),
-			LogLevel: getEnv("DB_LOGLEVEL", "Info"),
+			SSLMode:  getEnv("DB_SSLMODE", ""),
+			DBName:   getEnv("DB_NAME", ""),
+			LogLevel: getEnv("DB_LOGLEVEL", ""),
 		},
 	}
 }

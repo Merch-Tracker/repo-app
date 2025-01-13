@@ -1,0 +1,6 @@
+.idea
+.gitignore
+.git
+.dockerignore
+cmd/build.sh
+config.env
