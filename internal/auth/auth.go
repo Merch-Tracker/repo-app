@@ -77,7 +77,7 @@ func (a *Auth) Login() http.HandlerFunc {
 			return
 		}
 
-		token, err := jwt.NewJWT(jwt.JWTSecret).Create(usr.UserUUID)
+		token, err := jwt.NewJWT(jwt.Secret).Create(usr.UserUUID)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.WithField("error", err).Error(types.JwtCreateError)

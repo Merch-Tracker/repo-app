@@ -12,6 +12,7 @@ type ServerConfig struct {
 	HttpPort string
 	GrpcPort string
 	LogLvl   string
+	Secret   string
 }
 
 type DBConfig struct {
@@ -27,16 +28,16 @@ type DBConfig struct {
 func NewConfig() *Config {
 	return &Config{
 		HttpConf: ServerConfig{
-			Host:     getEnv("HTTP_HOST", "0.0.0.0"),
+			Host:     getEnv("HTTP_HOST", "localhost"),
 			HttpPort: getEnv("HTTP_PORT", "9010"),
 			GrpcPort: getEnv("GRPC_PORT", "9050"),
 			LogLvl:   getEnv("HTTP_LOGLEVEL", "Debug"),
+			Secret:   getEnv("JWT_SECRET", ""),
 		},
 
 		DBConf: DBConfig{
-			Port: getEnv("DB_PORT", ""),
-
 			Host:     getEnv("DB_HOST", ""),
+			Port:     getEnv("DB_PORT", ""),
 			Username: getEnv("DB_USER", ""),
 			Password: getEnv("DB_PASSWORD", ""),
 

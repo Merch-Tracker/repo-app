@@ -33,7 +33,7 @@ func Auth(next http.Handler) http.Handler {
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 		log.WithField("token", token).Debug(types.TokenRecieved)
 
-		data, err := jwt.NewJWT(jwt.JWTSecret).Parse(token)
+		data, err := jwt.NewJWT(jwt.Secret).Parse(token)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			log.Error("Error parsing token")

@@ -5,7 +5,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const JWTSecret = "b7dfb67ac0109337fa2f2612c213be7bfc63252e148bf63637bccf6ee4cddc1d"
+var Secret string
 
 type JWT struct {
 	SecretKey string

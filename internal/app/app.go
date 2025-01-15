@@ -10,6 +10,7 @@ import (
 	"repo-app/internal/images"
 	"repo-app/internal/merch"
 	"repo-app/internal/user"
+	"repo-app/pkg/jwt"
 	"repo-app/pkg/types"
 )
 
@@ -29,6 +30,9 @@ func (a *App) Init() {
 	if a.DB == nil {
 		log.Fatal("No database provided")
 	}
+
+	// init vars
+	jwt.Secret = a.Config.HttpConf.Secret
 
 	// init packages
 	NewRootHandler(a.Router)
