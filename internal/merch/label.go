@@ -1,7 +1,6 @@
 package merch
 
 import (
-	"fmt"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -40,19 +39,16 @@ func MigrateCardLabel(repo Repo) error {
 	return nil
 }
 
-// HTTP Handlers
 func (m *MerchHandler) NewLabel() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := helpers.ReadBody(&w, r)
 		if err != nil {
-			log.Error("Error in new label method")
 			return
 		}
 
 		newLabel := &Label{}
 		err = helpers.DeserializeJSON(&w, body, newLabel)
 		if err != nil {
-			log.Error("Error in deserialize label method")
 			return
 		}
 
@@ -69,37 +65,36 @@ func (m *MerchHandler) NewLabel() http.HandlerFunc {
 
 		err = newLabel.Create(m.repo)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.Error("Error creating new label")
+			http.Error(w, labelsCreateError, http.StatusInternalServerError)
+			log.WithField(errMsg, err).Error(labelsCreateError)
 			return
 		}
 
 		w.WriteHeader(http.StatusCreated)
-		log.Info("New label created")
+		log.Info(labelsCreateSuccess)
 	}
 }
 
-func (m *MerchHandler) GetLabel() http.HandlerFunc {
+func (m *MerchHandler) GetLabels() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := Label{OwnerUuid: helpers.GetUserUuid(r)}
 
 		labels, err := l.ReadAll(m.repo)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.Error("Error in get label")
+			http.Error(w, labelsGetAllError, http.StatusInternalServerError)
+			log.WithField(errMsg, err).Error(labelsGetAllError)
 			return
 		}
 
 		response, err := helpers.SerializeJSON(&w, labels)
 		if err != nil {
-			log.Error("Error in get label")
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(response)
-		log.Info("Get label success")
+		log.Info(labelsGetSuccess)
 	}
 }
 
@@ -107,43 +102,41 @@ func (m *MerchHandler) UpdateLabel() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		labelID, err := helpers.GetPathUuid(&w, r, "label_uuid")
 		if err != nil {
-			log.Error("Error in get label uuid")
+			log.Error(labelsGetIdError)
 			return
 		}
 
 		body, err := helpers.ReadBody(&w, r)
 		if err != nil {
-			log.Error("Error in update label method")
 			return
 		}
-
-		fmt.Println("BODY", string(body))
 
 		updateLabel := &Label{}
 		err = helpers.DeserializeJSON(&w, body, updateLabel)
 		if err != nil {
-			log.Error("Error in deserialize label method")
 			return
 		}
 
 		updateLabel.OwnerUuid = helpers.GetUserUuid(r)
 		updateLabel.LabelUuid = labelID
+
 		err = updateLabel.Update(m.repo)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.Error("Error in update label")
+			log.WithField(errMsg, err).Error(labelsUpdateError)
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		log.Info("Update label success")
+		log.Info(labelsUpdateSuccess)
 	}
 }
+
 func (m *MerchHandler) DeleteLabel() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		labelID, err := helpers.GetPathUuid(&w, r, "label_uuid")
 		if err != nil {
-			log.Error("Error in get delete label uuid")
+			log.Error(labelsGetIdError)
 			return
 		}
 
@@ -154,12 +147,12 @@ func (m *MerchHandler) DeleteLabel() http.HandlerFunc {
 
 		err = deleteLabel.Delete(m.repo)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.Error("Error in delete deleteLabel")
+			http.Error(w, labelsDeleteError, http.StatusInternalServerError)
+			log.WithField(errMsg, err).Error(labelsDeleteError)
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)
-		log.Info("Delete delete label success")
+		log.Info(labelsDeleteSuccess)
 	}
 }
 
@@ -167,27 +160,27 @@ func (m *MerchHandler) AttachLabel() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := helpers.ReadBody(&w, r)
 		if err != nil {
-			log.Error("Error in attach label method")
+			log.Error(labelAttachError)
 			return
 		}
 
 		cardLabel := &CardLabel{}
 		err = helpers.DeserializeJSON(&w, body, cardLabel)
 		if err != nil {
-			log.Error("Error in deserialize label method")
+			log.Error(labelAttachError)
 			return
 		}
 
 		cardLabel.OwnerUuid = helpers.GetUserUuid(r)
 		err = cardLabel.Attach(m.repo)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.Error("Error in attach label")
+			http.Error(w, labelAttachError, http.StatusInternalServerError)
+			log.WithField(errMsg, err).Error(labelAttachError)
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		log.Info("Attach label success")
+		log.Info(labelAttachSuccess)
 	}
 }
 
@@ -195,27 +188,27 @@ func (m *MerchHandler) DetachLabel() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		body, err := helpers.ReadBody(&w, r)
 		if err != nil {
-			log.Error("Error in detach label method")
+			log.Error(labelDetachError)
 			return
 		}
 
 		cardLabel := &CardLabel{}
 		err = helpers.DeserializeJSON(&w, body, cardLabel)
 		if err != nil {
-			log.Error("Error in deserialize label method")
+			log.Error(labelDetachError)
 			return
 		}
 
 		cardLabel.OwnerUuid = helpers.GetUserUuid(r)
 		err = cardLabel.Detach(m.repo)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.Error("Error in detach label")
+			http.Error(w, labelDetachError, http.StatusInternalServerError)
+			log.WithField(errMsg, err).Error(labelDetachError)
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		log.Info("Detach label success")
+		log.Info(labelDetachSuccess)
 	}
 }
 

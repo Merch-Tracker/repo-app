@@ -24,24 +24,24 @@ func (m *MerchHandler) GetPriceHistory() http.HandlerFunc {
 
 		u, err := url.Parse(r.URL.String())
 		if err != nil {
-			log.WithField("error", err).Error("Parsing URL query params")
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, urlParseError, http.StatusBadRequest)
+			log.WithField(errMsg, err).Error(urlParseError)
 			return
 		}
 
 		qParams := u.Query()
 		count, err := strconv.Atoi(qParams.Get("count"))
 		if err != nil {
-			log.WithField("error", err).Error("Parsing query params")
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, queryParseError, http.StatusBadRequest)
+			log.WithField(errMsg, err).Error(queryParseError)
 			return
 		}
 
 		point := ChartPoint{}
 		prices, err := point.GetPriceHistory(m.repo, merchUuid, count)
 		if err != nil {
-			log.WithField("error", err).Error("Getting price history")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, getPriceHistoryError, http.StatusInternalServerError)
+			log.WithField(errMsg, err).Error(getPriceHistoryError)
 			return
 		}
 
@@ -58,15 +58,15 @@ func (m *MerchHandler) GetPriceHistory() http.HandlerFunc {
 
 		response, err := helpers.SerializeJSON(&w, filteredPrices)
 		if err != nil {
-			log.WithField("error", err).Error("Serializing price history")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, serPriceHistory, http.StatusInternalServerError)
+			log.WithField(errMsg, err).Error(serPriceHistory)
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(response)
-		log.Info("Successfully fetched price history")
+		log.Info(priceHistoryFetchSuccess)
 	}
 }
 

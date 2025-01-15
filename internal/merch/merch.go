@@ -1,7 +1,6 @@
 package merch
 
 import (
-	"fmt"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -26,25 +25,25 @@ func NewMerchHandler(router *http.ServeMux, repo Repo) {
 
 	err = MigrateMerch(repo)
 	if err != nil {
-		log.WithField("model", "Merch").Fatal(types.MerchMigrationError)
+		log.Fatal(merchTableError)
 	}
 
 	err = MigrateMerchInfo(repo)
 	if err != nil {
-		log.WithField("model", "MerchInfo").Fatal(types.MerchMigrationError)
+		log.Fatal(pricesTableError)
 	}
 
 	err = MigrateLabel(repo)
 	if err != nil {
-		log.WithField("model", "Label").Fatal("Label model migration failed")
+		log.Fatal(labelsTableError)
 	}
 
 	err = MigrateCardLabel(repo)
 	if err != nil {
-		log.WithField("model", "CardLabel").Fatal("Card label model migration failed")
+		log.Fatal(cardLabelsTableError)
 	}
 
-	log.Info(types.MerchMigrationSuccess)
+	log.Info(migrationsSuccess)
 
 	router.HandleFunc("POST /merch", handler.New())
 	router.HandleFunc("GET /merch/", handler.ReadOne())
@@ -53,7 +52,7 @@ func NewMerchHandler(router *http.ServeMux, repo Repo) {
 	router.HandleFunc("DELETE /merch/{merch_uuid}", handler.Delete())
 
 	router.HandleFunc("POST /label", handler.NewLabel())
-	router.HandleFunc("GET /label", handler.GetLabel())
+	router.HandleFunc("GET /label", handler.GetLabels())
 	router.HandleFunc("PUT /label/{label_uuid}", handler.UpdateLabel())
 	router.HandleFunc("DELETE /label/{label_uuid}", handler.DeleteLabel())
 
@@ -78,9 +77,9 @@ func (m *MerchHandler) New() http.HandlerFunc {
 
 		err = m.validate.Struct(newMerch)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, newMerchValidationError, http.StatusBadRequest)
 			for _, err = range err.(validator.ValidationErrors) {
-				log.WithField("error", err).Info(types.ValidationError)
+				log.WithField(errMsg, err).Info(newMerchValidationError)
 			}
 			return
 		}
@@ -90,13 +89,13 @@ func (m *MerchHandler) New() http.HandlerFunc {
 
 		err = newMerch.Create(m.repo)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.WithField("error", err).Error(types.MerchCreateError)
+			http.Error(w, merchCreateError, http.StatusInternalServerError)
+			log.WithField(errMsg, err).Error(merchCreateError)
 			return
 		}
 
 		w.WriteHeader(http.StatusCreated)
-		log.Info(types.MerchCreateSuccess)
+		log.Info(merchCreateSuccess)
 	}
 }
 
@@ -107,22 +106,20 @@ func (m *MerchHandler) ReadOne() http.HandlerFunc {
 
 		err := readMerch.ReadOne(m.repo)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.WithField("error", err).Error(types.MerchReadError)
+			http.Error(w, merchReadError, http.StatusInternalServerError)
+			log.WithField(errMsg, err).Error(merchReadError)
 			return
 		}
 
 		response, err := helpers.SerializeJSON(&w, readMerch)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.WithField("error", err).Error(types.MerchSerializeError)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(response)
-		log.Info(types.MerchReadSuccess)
+		log.Info(merchReadSuccess)
 	}
 }
 
@@ -134,8 +131,8 @@ func (m *MerchHandler) ReadAll() http.HandlerFunc {
 		// select all merch
 		allMerch, err := merch.ReadMany(m.repo)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.WithField("error", err).Error(types.MerchReadError)
+			http.Error(w, merchReadError, http.StatusInternalServerError)
+			log.WithField(errMsg, err).Error(merchReadError)
 			return
 		}
 
@@ -143,8 +140,8 @@ func (m *MerchHandler) ReadAll() http.HandlerFunc {
 		label := CardLabel{OwnerUuid: owner}
 		cardLabels, err := label.ReadAll(m.repo)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.WithField("error", err).Error("Get all labels")
+			http.Error(w, labelsGetAllError, http.StatusInternalServerError)
+			log.WithField(errMsg, err).Error(labelsGetAllError)
 			return
 		}
 
@@ -161,18 +158,15 @@ func (m *MerchHandler) ReadAll() http.HandlerFunc {
 		}
 
 		// composed response
-		fmt.Println(composedResponse)
 		response, err := helpers.SerializeJSON(&w, composedResponse)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.WithField("error", err).Error(types.MerchSerializeError)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(response)
-		log.WithField("bytes", len(response)).Info(types.MerchReadSuccess)
+		log.WithField(bytesMsg, len(response)).Info(merchReadSuccess)
 	}
 }
 
@@ -199,13 +193,13 @@ func (m *MerchHandler) Update() http.HandlerFunc {
 
 		err = merch.Update(m.repo)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.WithField("error", err).Error(types.MerchUpdateError)
+			http.Error(w, merchUpdateError, http.StatusInternalServerError)
+			log.WithField(errMsg, err).Error(merchUpdateError)
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		log.Info(types.MerchUpdateSuccess)
+		log.Info(merchUpdateSuccess)
 	}
 }
 
@@ -223,12 +217,12 @@ func (m *MerchHandler) Delete() http.HandlerFunc {
 
 		err = merch.Delete(m.repo)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.WithField("error", err).Error(types.MerchDeleteError)
+			http.Error(w, merchDeleteError, http.StatusInternalServerError)
+			log.WithField("error", err).Error(merchDeleteError)
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		log.Info(types.MerchDeleteSuccess)
+		log.Info(merchDeleteSuccess)
 	}
 }
