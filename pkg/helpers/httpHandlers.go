@@ -6,31 +6,30 @@ import (
 	"io"
 	"net/http"
 	"repo-app/pkg/jwt"
-	"repo-app/pkg/types"
 )
 
 func ReadBody(w *http.ResponseWriter, r *http.Request) ([]byte, error) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		(*w).WriteHeader(http.StatusBadRequest)
-		log.Error("Request error", err)
+		http.Error(*w, requestError, http.StatusBadRequest)
+		log.WithField(errMsg, err).Error(requestError)
 		return nil, err
 	}
 	return body, nil
 }
 
 func GetUserUuid(r *http.Request) uuid.UUID {
-	return r.Context().Value(types.UserDataKey).(*jwt.Data).UserID
+	return r.Context().Value(jwt.UserDataKey).(*jwt.Data).UserID
 }
 
 func GetPathUuid(w *http.ResponseWriter, r *http.Request, pathValue string) (uuid.UUID, error) {
 	pathUuid, err := uuid.Parse(r.PathValue(pathValue))
 	if err != nil {
-		(*w).WriteHeader(http.StatusBadRequest)
+		http.Error(*w, requestError, http.StatusBadRequest)
 		log.WithFields(log.Fields{
-			"error": err,
-			"uuid":  pathValue,
-		}).Error("Request error")
+			errMsg: err,
+			idMsg:  pathValue,
+		}).Error(requestError)
 		return uuid.Nil, err
 	}
 	return pathUuid, nil

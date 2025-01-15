@@ -5,7 +5,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"repo-app/pkg/jwt"
-	"repo-app/pkg/types"
 	"strings"
 )
 
@@ -31,7 +30,7 @@ func Auth(next http.Handler) http.Handler {
 		}
 
 		token := strings.TrimPrefix(authHeader, "Bearer ")
-		log.WithField("token", token).Debug(types.TokenRecieved)
+		log.WithField("token", token).Debug(jwt.TokenReceived)
 
 		data, err := jwt.NewJWT(jwt.Secret).Parse(token)
 		if err != nil {
@@ -39,9 +38,9 @@ func Auth(next http.Handler) http.Handler {
 			log.Error("Error parsing token")
 			return
 		}
-		log.WithField("data", data).Debug(types.TokenParsed)
+		log.WithField("data", data).Debug(jwt.TokenParsed)
 
-		ctx := context.WithValue(r.Context(), types.UserDataKey, data)
+		ctx := context.WithValue(r.Context(), jwt.UserDataKey, data)
 		r = r.WithContext(ctx)
 
 		next.ServeHTTP(w, r)

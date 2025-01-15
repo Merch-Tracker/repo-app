@@ -47,9 +47,9 @@ func (a *Auth) Login() http.HandlerFunc {
 
 		err = a.validate.Struct(loginUser)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			for _, err = range err.(validator.ValidationErrors) {
-				log.WithField("error", err).Info(types.ValidationError)
+				log.WithField(errMsg, err).Info(loginValidationError)
 			}
 			return
 		}
@@ -60,41 +60,48 @@ func (a *Auth) Login() http.HandlerFunc {
 
 		err = usr.ReadOne(a.repo)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			log.WithField("error", err).Info(types.LoginUserReadFailed)
+			http.Error(w, loginReadUserError, http.StatusBadRequest)
+			log.WithField(errMsg, err).Info(loginReadUserError)
 			return
 		}
 
 		if usr.Verified != true {
-			w.WriteHeader(http.StatusForbidden)
-			log.WithField("user", usr.UserUUID).Warn("Unverified access atempt")
+			http.Error(w, loginUnverified, http.StatusForbidden)
+			log.WithField(respMsg, usr.UserUUID).Warn(loginUnverified)
 		}
 
 		err = password.ComparePasswords(usr.Password, loginUser.Password)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			log.Info(types.PasswordCompareError)
+			http.Error(w, password.PasswordCompareError, http.StatusBadRequest)
+			log.Info(password.PasswordCompareError)
 			return
 		}
 
 		token, err := jwt.NewJWT(jwt.Secret).Create(usr.UserUUID)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			log.WithField("error", err).Error(types.JwtCreateError)
+			http.Error(w, jwt.TokenCreateError, http.StatusInternalServerError)
+			log.WithField(errMsg, err).Error(jwt.TokenCreateError)
 			return
 		}
 
 		w.Header().Add("Authorization", fmt.Sprintf("Bearer %s", token))
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(jwt.TokenResponse{Token: token})
-		log.WithField("token", token).Info(types.LoginSuccess)
+
+		err = json.NewEncoder(w).Encode(jwt.TokenResponse{Token: token})
+		if err != nil {
+			http.Error(w, loginResponseEncodeError, http.StatusInternalServerError)
+			log.WithField(errMsg, err).Error(loginResponseEncodeError)
+			return
+		}
+
+		log.WithField(respMsg, token).Info(loginSuccess)
 	}
 }
 
 func (a *Auth) Logout() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
@@ -104,47 +111,43 @@ func (a *Auth) Register() http.HandlerFunc {
 		if err != nil {
 			return
 		}
-		log.WithFields(log.Fields{"data": string(body)}).Debug(types.ReadBody)
 
 		registerUser := user.RegisterUser{}
 		err = helpers.DeserializeJSON(&w, body, &registerUser)
 		if err != nil {
 			return
 		}
-		log.WithFields(log.Fields{"data": registerUser}).Debug(types.Deserialized)
 
 		err = a.validate.Struct(registerUser)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, registerValidationError, http.StatusBadRequest)
 			for _, err = range err.(validator.ValidationErrors) {
-				log.WithField("error", err).Error(types.ValidationError)
+				log.WithField(errMsg, err).Error(registerValidationError)
 			}
 			return
 		}
-		log.Debug("Validated")
 
 		registerUser.Password, err = password.HashPassword(registerUser.Password)
 		if err != nil {
-			http.Error(w, types.PasswordHashError, http.StatusInternalServerError)
-			log.WithField("error", err).Error(types.PasswordHashError)
+			http.Error(w, password.PasswordHashError, http.StatusInternalServerError)
+			log.WithField(errMsg, err).Error(password.PasswordHashError)
 			return
 		}
-		log.Debug("Password hashed")
 
 		err = registerUser.Create(a.repo)
 		if err != nil {
 			if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
 				w.WriteHeader(http.StatusConflict)
-				log.Error(types.UserExists)
+				log.Error(registerUserExists)
 				return
 			}
 
-			w.WriteHeader(http.StatusInternalServerError)
-			log.WithField("msg", err).Error(types.UserCreateError)
+			http.Error(w, registerUserError, http.StatusInternalServerError)
+			log.WithField(errMsg, err).Error(registerUserError)
 			return
 		}
 
 		w.WriteHeader(http.StatusCreated)
-		log.Info(types.UserCreateSuccess)
+		log.Info(registerSuccess)
 	}
 }
