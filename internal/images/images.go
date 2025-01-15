@@ -32,14 +32,14 @@ func (i *ImageHandler) Upload() http.HandlerFunc {
 		err := r.ParseMultipartForm(10 << 20)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-			log.WithField("error", err).Error("Error receiving image")
+			log.WithField("error", err).Error(receiveImageError)
 			return
 		}
 
 		file, _, err := r.FormFile("Data")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-			log.WithField("error", err).Error("Error receiving image")
+			log.WithField("error", err).Error(receiveImageError)
 			return
 		}
 		defer file.Close()
@@ -47,7 +47,7 @@ func (i *ImageHandler) Upload() http.HandlerFunc {
 		data, err := io.ReadAll(file)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
-			log.WithField("error", err).Error("Error receiving image")
+			log.WithField("error", err).Error(receiveImageError)
 			return
 		}
 
@@ -64,7 +64,7 @@ func (i *ImageHandler) Upload() http.HandlerFunc {
 		err = img.Upload(i.repo)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.WithField("error", err).Error("Upload image")
+			log.WithField("error", err).Error(uploadImageError)
 			return
 		}
 
@@ -84,12 +84,12 @@ func (i *ImageHandler) SendImage() http.HandlerFunc {
 		if err != nil {
 			if err.Error() == "record not found" {
 				w.WriteHeader(http.StatusNoContent)
-				log.WithField("error", err).Info("Requested image does not exist")
+				log.WithField("error", err).Info(imageDoesNotExist)
 				return
 			}
 
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.WithField("error", err).Error("Error getting image from DB")
+			log.WithField("error", err).Error(getFromDBError)
 			return
 		}
 
@@ -102,6 +102,6 @@ func (i *ImageHandler) SendImage() http.HandlerFunc {
 		log.WithFields(log.Fields{
 			"MerchUuid": merchUuid,
 			"length":    len(img.Data),
-		}).Info("Image fetched")
+		}).Info(imageFetched)
 	}
 }
