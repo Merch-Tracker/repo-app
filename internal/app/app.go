@@ -28,7 +28,7 @@ func (a *App) Init() {
 	a.GrpcServer = NewGrpcServer(a.DB)
 
 	if a.DB == nil {
-		log.Fatal("No database provided")
+		log.Fatal(noDBErr)
 	}
 
 	// init vars
@@ -43,27 +43,27 @@ func (a *App) Init() {
 }
 
 func (a *App) Start() {
-	log.Info("Starting application")
+	log.Info(appStart)
 
 	go func() {
 		if err := a.HttpServer.Run(); err != nil {
-			log.Fatal(err)
+			log.WithField(errMsg, err).Fatal(httpServerFatal)
 		}
 	}()
-	log.Debug("HTTP Server started")
+	log.Debug(httpServerStart)
 
 	go func() {
 		listener, err := net.Listen("tcp", net.JoinHostPort(a.Config.HttpConf.Host, a.Config.HttpConf.GrpcPort))
 		if err != nil {
-			log.Fatal(err)
+			log.WithField(errMsg, err).Fatal(grpcServerFatal)
 		}
 
 		err = a.GrpcServer.Serve(listener)
 		if err != nil {
-			log.Fatal(err)
+			log.WithField(errMsg, err).Fatal(grpcServerFatal)
 		}
 	}()
-	log.Debug("gRPC Server started")
+	log.Debug(grpcServerStart)
 
 	select {}
 }

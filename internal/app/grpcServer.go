@@ -30,6 +30,7 @@ func (s *pwServer) GetMerch(req *emptypb.Empty, stream pb.PriceWatcher_GetMerchS
 	me := merch.GMerch{}
 	merchList, err := me.ReadAll(s.repo)
 	if err != nil {
+		log.WithField(errMsg, err).Error(grpcGetMerchRepoReadError)
 		return err
 	}
 
@@ -42,11 +43,13 @@ func (s *pwServer) GetMerch(req *emptypb.Empty, stream pb.PriceWatcher_GetMerchS
 			CookieValues: m.CookieValues,
 			Separator:    m.Separator,
 		}
-		err := stream.Send(response)
+
+		err = stream.Send(response)
 		if err != nil {
+			log.WithField(errMsg, err).Error(grpcGetMerchStreamError)
 			return err
 		}
-		log.WithField("response", response).Debug("gRPC | Merch read")
+		log.WithField(respMsg, response).Debug(grpcGetMerchSuccess)
 	}
 	return nil
 }
@@ -69,7 +72,7 @@ func (s *pwServer) PostMerch(stream pb.PriceWatcher_PostMerchServer) error {
 				if len(batch) > 0 {
 					err := s.SaveToDB(batch)
 					if err != nil {
-						log.Error(err)
+						log.WithField(errMsg, err).Error(grpcPostMerchBatchError)
 					}
 				}
 			}
@@ -79,22 +82,25 @@ func (s *pwServer) PostMerch(stream pb.PriceWatcher_PostMerchServer) error {
 	for {
 		response, err := stream.Recv()
 		if err == io.EOF {
-			log.Debug("gRPC EOF")
+			log.Debug(grpcEOF)
 			break
 		}
+
 		if err != nil {
+			log.WithField(errMsg, err).Error(grpcReceiveError)
 			return err
 		}
 
 		entry := merch.MerchInfo{MerchUuid: uuid.MustParse(response.MerchUuid), Price: uint(response.Price)}
 		batch = append(batch, entry)
-		log.WithField("data", entry).Debug("gRPC response")
+		log.WithField(respMsg, entry).Debug(grpcReceiveSuccess)
 	}
 
 	close(done)
 	if len(batch) > 0 {
 		err := s.SaveToDB(batch)
 		if err != nil {
+			log.WithField(errMsg, err).Error(grpcPostMerchBatchError)
 			return err
 		}
 	}
