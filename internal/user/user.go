@@ -17,7 +17,7 @@ func NewUserHandler(router *http.ServeMux, repo types.Repo) {
 
 	err := Migrate(handler.repo)
 	if err != nil {
-		log.Fatal("Migration error", err)
+		log.Fatal(migrationErr, err)
 	}
 
 	router.HandleFunc("GET /user/", handler.Read())

@@ -4,7 +4,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"repo-app/pkg/helpers"
-	"repo-app/pkg/types"
 )
 
 func (u *UserHandler) Read() http.HandlerFunc {
@@ -15,7 +14,7 @@ func (u *UserHandler) Read() http.HandlerFunc {
 		err := readUser.ReadOnePayload(u.repo, payload)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
-			log.WithField("msg", err).Error(types.UserReadError)
+			log.WithField(errMsg, err).Error(userReadError)
 			return
 		}
 
@@ -27,7 +26,7 @@ func (u *UserHandler) Read() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(response)
-		log.WithField("response", payload).Info(types.UserReadSuccess)
+		log.WithField(respMsg, payload).Info(userReadSuccess)
 	}
 }
 
@@ -48,12 +47,12 @@ func (u *UserHandler) Update() http.HandlerFunc {
 		err = updateUser.Update(u.repo)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			log.Error("Update user")
+			log.WithField(errMsg, err).Error(userUpdateError)
 			return
 		}
 
 		w.WriteHeader(http.StatusNoContent)
-		log.WithFields(log.Fields{"data": updateUser}).Info("Update user")
+		log.WithField(noRespMsg, updateUser).Info(userUpdateSuccess)
 	}
 }
 
@@ -63,10 +62,10 @@ func (u *UserHandler) Delete() http.HandlerFunc {
 		err := deleteUser.Delete(u.repo)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			log.Error("Delete user")
+			log.WithField(errMsg, err).Error(userDeleteError)
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)
-		log.WithFields(log.Fields{"data": deleteUser}).Info("Delete user")
+		log.WithField(noRespMsg, deleteUser).Info(userDeleteSuccess)
 	}
 }
