@@ -20,7 +20,7 @@ func NewImageHandler(router *http.ServeMux, repo Repo) {
 
 	err := MigrateImage(repo)
 	if err != nil {
-		log.WithField("model", "Image").Fatal(types.MerchMigrationError)
+		log.WithField("model", "Image").Fatal(imagesTableMigrationError)
 	}
 
 	router.HandleFunc("POST /images/{merch_uuid}", handler.Upload())
