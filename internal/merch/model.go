@@ -8,19 +8,19 @@ import (
 
 type Merch struct {
 	gorm.Model
-	MerchUuid      uuid.UUID
-	OwnerUuid      uuid.UUID
-	Name           string `json:"name" validate:"required,min=1,max=100"`
-	Link           string `json:"link"`
-	ParseTag       string `json:"parse_tag"`
-	ParseSubstring string `json:"parse_substring"`
-	CookieValues   string `json:"cookie_values"`
-	Separator      string `json:"separator"`
+	MerchUuid      uuid.UUID `gorm:"unique"`
+	OwnerUuid      uuid.UUID `gorm:"index"`
+	Name           string    `json:"name" validate:"required,min=1,max=100"`
+	Link           string    `json:"link"`
+	ParseTag       string    `json:"parse_tag"`
+	ParseSubstring string    `json:"parse_substring"`
+	CookieValues   string    `json:"cookie_values"`
+	Separator      string    `json:"separator"`
 }
 
 type MerchInfo struct {
 	gorm.Model
-	MerchUuid uuid.UUID
+	MerchUuid uuid.UUID `gorm:"foreignkey:MerchUuid;references:MerchUuid"`
 	Price     uint
 }
 

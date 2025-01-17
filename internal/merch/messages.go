@@ -3,6 +3,7 @@ package merch
 const (
 	errMsg   = "error"
 	bytesMsg = "bytes sent"
+	respMsg  = "response"
 
 	merchTableError      = "Merchandise table migration failed"
 	pricesTableError     = "Prices table migration failed"
@@ -41,4 +42,6 @@ const (
 	getPriceHistoryError     = "Price history read failed"
 	serPriceHistory          = "Serializing price history failed"
 	priceHistoryFetchSuccess = "Price history fetched successfully"
+	chartsReadDataError      = "Charts data read failed"
+	chartsReadDataSuccess    = "Charts data read successfully"
 )
