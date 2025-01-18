@@ -1,9 +1,10 @@
 package merch
 
 const (
-	errMsg   = "error"
-	bytesMsg = "bytes sent"
-	respMsg  = "response"
+	errMsg       = "error"
+	bytesMsg     = "bytes sent"
+	respMsg      = "response"
+	noContentMsg = "No content"
 
 	merchTableError      = "Merchandise table migration failed"
 	pricesTableError     = "Prices table migration failed"

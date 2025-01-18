@@ -51,6 +51,12 @@ func (m *MerchHandler) GetPriceHistory() http.HandlerFunc {
 			return
 		}
 
+		if len(*prices) == 0 {
+			w.WriteHeader(http.StatusNoContent)
+			log.WithField(respMsg, noContentMsg).Info(priceHistoryFetchSuccess)
+			return
+		}
+
 		var filteredPrices []ChartPoint
 
 		if prices != nil {
@@ -146,7 +152,7 @@ func (c *ChartsData) GetAllPrices(repo Repo, ownerUuid uuid.UUID, count int) (*[
 }
 
 func countDays(count int) time.Time {
-	if count == 0 || count <= 30 {
+	if count > 0 && count <= 30 {
 		return time.Now().Add(-time.Duration(count) * 24 * time.Hour)
 	} else {
 		return time.Now().Add(-time.Duration(7) * 24 * time.Hour)
