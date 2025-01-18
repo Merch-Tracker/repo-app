@@ -101,7 +101,8 @@ func (d *DB) ReadManySubmodel(model any, payload any, params map[string]any) err
 
 func (d *DB) ReadCharts(payload any, params map[string]any) error {
 	query := d.DB.Table("merch_infos AS mi").
-		Select("me.name, me.link, mi.merch_uuid, json_agg(json_build_object('created_at', mi.created_at, 'price', mi.price)) AS prices").
+		Select("me.name, me.link, mi.merch_uuid, json_agg(json_build_object("+
+			"'created_at', mi.created_at, 'price', mi.price) ORDER BY mi.created_at) AS prices").
 		Joins("JOIN merches AS me ON mi.merch_uuid = me.merch_uuid").
 		Where("me.owner_uuid = ?", params["owner_uuid"]).
 		Where("mi.created_at >= ?", params["days"]).
