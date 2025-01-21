@@ -43,7 +43,7 @@ func NewMerchHandler(router *http.ServeMux, repo Repo) {
 		log.Fatal(cardLabelsTableError)
 	}
 
-	log.Info(migrationsSuccess)
+	log.Debug(migrationsSuccess)
 
 	router.HandleFunc("POST /merch", handler.New())
 	router.HandleFunc("GET /merch/", handler.ReadOne())
