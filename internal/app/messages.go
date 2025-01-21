@@ -24,4 +24,7 @@ const (
 
 	grpcReceiveError   = "gRPC receive error"
 	grpcReceiveSuccess = "gRPC receive success"
+
+	notificationServiceError   = "Notification service start failed"
+	notificationServiceSuccess = "Notification service started"
 )
