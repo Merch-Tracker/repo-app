@@ -9,30 +9,36 @@ import (
 	"repo-app/internal/auth"
 	"repo-app/internal/images"
 	"repo-app/internal/merch"
+	"repo-app/internal/notify"
 	"repo-app/internal/user"
 	"repo-app/pkg/jwt"
 	"repo-app/pkg/types"
 )
 
 type App struct {
-	Config     *config.Config
-	Router     *http.ServeMux
-	HttpServer *Server
-	GrpcServer *grpc.Server
-	DB         types.Repo
+	Config          *config.Config
+	DB              types.Repo
+	Router          *http.ServeMux
+	HttpServer      *Server
+	GrpcServer      *grpc.Server
+	NotifierService *notify.NotificationService
+	NotifierChan    chan struct{}
 }
 
 func (a *App) Init() {
-	a.Router = http.NewServeMux()
-	a.HttpServer = NewHttpServer(a.Config, a.Router)
-	a.GrpcServer = NewGrpcServer(a.DB)
+	// init vars
+	a.NotifierChan = make(chan struct{})
+	jwt.Secret = a.Config.HttpConf.Secret
 
 	if a.DB == nil {
 		log.Fatal(noDBErr)
 	}
 
-	// init vars
-	jwt.Secret = a.Config.HttpConf.Secret
+	// init services
+	a.Router = http.NewServeMux()
+	a.HttpServer = NewHttpServer(a.Config, a.Router)
+	a.GrpcServer = NewGrpcServer(a.DB, a.NotifierChan)
+	a.NotifierService = notify.NewNotificationService(a.DB, a.NotifierChan)
 
 	// init packages
 	NewRootHandler(a.Router)
@@ -40,6 +46,7 @@ func (a *App) Init() {
 	auth.NewAuthHandler(a.Router, a.DB)
 	merch.NewMerchHandler(a.Router, a.DB)
 	images.NewImageHandler(a.Router, a.DB)
+	notify.NewNotifierHandler(a.DB, a.Router)
 }
 
 func (a *App) Start() {
@@ -50,7 +57,7 @@ func (a *App) Start() {
 			log.WithField(errMsg, err).Fatal(httpServerFatal)
 		}
 	}()
-	log.Debug(httpServerStart)
+	log.Info(httpServerStart)
 
 	go func() {
 		listener, err := net.Listen("tcp", net.JoinHostPort(a.Config.HttpConf.Host, a.Config.HttpConf.GrpcPort))
@@ -63,7 +70,14 @@ func (a *App) Start() {
 			log.WithField(errMsg, err).Fatal(grpcServerFatal)
 		}
 	}()
-	log.Debug(grpcServerStart)
+	log.Info(grpcServerStart)
+
+	go func() {
+		if err := a.NotifierService.Run(); err != nil {
+			log.WithField(errMsg, err).Error(notificationServiceError)
+		}
+	}()
+	log.Info(notificationServiceSuccess)
 
 	select {}
 }

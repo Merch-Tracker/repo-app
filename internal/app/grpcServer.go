@@ -16,12 +16,16 @@ type Repo types.Repo
 
 type pwServer struct {
 	pb.UnimplementedPriceWatcherServer
-	repo Repo
+	repo         Repo
+	notifierChan chan struct{}
 }
 
-func NewGrpcServer(repo Repo) *grpc.Server {
+func NewGrpcServer(repo Repo, notifierChan chan struct{}) *grpc.Server {
 	grpcServer := grpc.NewServer()
-	pwServ := pwServer{repo: repo}
+	pwServ := pwServer{
+		repo:         repo,
+		notifierChan: notifierChan,
+	}
 	pb.RegisterPriceWatcherServer(grpcServer, &pwServ)
 	return grpcServer
 }
@@ -104,6 +108,8 @@ func (s *pwServer) PostMerch(stream pb.PriceWatcher_PostMerchServer) error {
 			return err
 		}
 	}
+
+	s.notifierChan <- struct{}{}
 
 	return nil
 }
