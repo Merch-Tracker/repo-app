@@ -116,3 +116,13 @@ func (d *DB) ReadCharts(payload any, params map[string]any) error {
 	}
 	return nil
 }
+
+func (d *DB) ReadRaw(sql string, payload any) error {
+	query := d.DB.Raw(sql).Scan(payload)
+
+	err := query.Error
+	if err != nil {
+		return err
+	}
+	return nil
+}

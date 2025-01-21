@@ -13,7 +13,9 @@ type Repo interface {
 	ReadManySimple(any, map[string]any) error
 	ReadMany(any, map[string]any) error
 	ReadManySubmodel(any, any, map[string]any) error
+
 	ReadCharts(any, map[string]any) error
+	ReadRaw(string, any) error
 
 	Update(any, map[string]any) error
 
