@@ -106,7 +106,7 @@ func (d *DB) ReadCharts(payload any, params map[string]any) error {
 		Joins("JOIN merches AS me ON mi.merch_uuid = me.merch_uuid").
 		Where("me.owner_uuid = ?", params["owner_uuid"]).
 		Where("mi.created_at >= ?", params["days"]).
-		Where("me.deleted_at IS NULL").
+		Where("mi.deleted_at IS NULL").
 		Group("mi.merch_uuid, me.name, me.link").
 		Scan(payload)
 
