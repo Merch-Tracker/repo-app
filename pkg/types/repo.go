@@ -18,6 +18,7 @@ type Repo interface {
 	ReadRaw(string, any) error
 
 	Update(any, map[string]any) error
+	UpdateNotifications(any, []uint, string) error
 
 	Delete(any, map[string]any) error
 }

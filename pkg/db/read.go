@@ -118,7 +118,7 @@ func (d *DB) ReadCharts(payload any, params map[string]any) error {
 }
 
 func (d *DB) ReadRaw(sql string, payload any) error {
-	query := d.DB.Raw(sql).Scan(payload)
+	query := d.DB.Raw(sql).Find(payload)
 
 	err := query.Error
 	if err != nil {
