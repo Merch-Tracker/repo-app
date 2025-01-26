@@ -9,20 +9,21 @@ import (
 )
 
 type NotifyMessage struct {
-	gorm.Model
+	Id        uint   `json:"id" gorm:"primary_key"`
 	UserUuid  string `json:"-"`
 	MerchUuid string `json:"merch_uuid"`
-	Price     uint   `json:"price"`
-	Viewed    bool   `json:"seen"`
+	PriceId   uint   `json:"price_id"`
+	Seen      bool   `json:"seen"`
 }
 
 type NotifyMessageResponse struct {
 	UserUuid  string    `json:"-"`
+	NoteId    uint      `json:"note_id" gorm:"column:id"`
 	CreatedAt time.Time `json:"created_at"`
 	Name      string    `json:"name"`
 	MerchUuid string    `json:"merch_uuid"`
 	Price     uint      `json:"price"`
-	Viewed    bool      `json:"seen"`
+	Seen      bool      `json:"seen"`
 }
 
 type Notifier struct {
@@ -43,6 +44,7 @@ type PricesList struct {
 	MerchUuid string `json:"merch_uuid"`
 	Name      string `json:"name"`
 	Price     uint   `json:"price"`
+	PriceId   uint   `json:"price_id"`
 }
 
 type NotifierRecord struct {
@@ -95,10 +97,10 @@ func (n *UsersList) GetList(repo Repo) (*[]UsersList, error) {
 
 func (p *PricesList) GetList(repo Repo, userList []string) (*[]PricesList, error) {
 	sql := fmt.Sprintf(`
-	WITH RankedPrices AS ( SELECT mi.merch_uuid, mi.price,
+	WITH RankedPrices AS ( SELECT mi.merch_uuid, mi.price, mi.id AS price_id,
 		ROW_NUMBER() OVER (PARTITION BY mi.merch_uuid ORDER BY mi.created_at DESC) AS rn
 	FROM merch_infos mi )
-	SELECT u.user_uuid, m.merch_uuid, m.name, rp.price
+	SELECT u.user_uuid, m.merch_uuid, m.name, rp.price, price_id
 	FROM users u
 	JOIN merches m ON u.user_uuid = m.owner_uuid
 	JOIN RankedPrices rp ON m.merch_uuid = rp.merch_uuid
@@ -116,12 +118,12 @@ func (p *PricesList) GetList(repo Repo, userList []string) (*[]PricesList, error
 
 func (n *NotifyMessageResponse) ReadAll(repo Repo) (*[]NotifyMessageResponse, error) {
 	sql := fmt.Sprintf(`
-		SELECT m.name, nm.created_at, nm.merch_uuid, nm.price
+		SELECT nm.id, m.name, mi.created_at, nm.merch_uuid, mi.price, nm.seen
 		FROM notify_messages AS nm
 		JOIN merches AS m ON m.merch_uuid = nm.merch_uuid
+		JOIN merch_infos AS mi ON nm.price_id = mi.id
 		WHERE nm.user_uuid = '%s'
-		AND nm.deleted_at IS NULL
-		ORDER BY nm.created_at DESC;
+		ORDER BY mi.created_at DESC;
 	`, n.UserUuid)
 
 	messages := &[]NotifyMessageResponse{}
@@ -133,10 +135,6 @@ func (n *NotifyMessageResponse) ReadAll(repo Repo) (*[]NotifyMessageResponse, er
 	return messages, nil
 }
 
-func (n *NotifyMessage) MarkAsRead(repo Repo, list *[]NotifyMessage) error {
-	err := repo.Save(list)
-	if err != nil {
-		return err
-	}
-	return nil
+func (n *NotifyMessage) MarkAsRead(repo Repo, list []uint, userUuid string) error {
+	return repo.UpdateNotifications(n, list, userUuid)
 }

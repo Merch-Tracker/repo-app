@@ -76,20 +76,14 @@ func (n *NotifierHandler) MarkAsRead() http.HandlerFunc {
 			return
 		}
 
-		markList := &[]NotifyMessage{}
-
-		err = helpers.DeserializeJSON(&w, body, markList)
+		var updateList []uint
+		err = helpers.DeserializeJSON(&w, body, &updateList)
 		if err != nil {
 			return
 		}
 
-		for _, message := range *markList {
-			message.UserUuid = usr.String()
-			message.Viewed = true
-		}
-
 		nm := NotifyMessage{}
-		err = nm.MarkAsRead(n.repo, markList)
+		err = nm.MarkAsRead(n.repo, updateList, usr.String())
 		if err != nil {
 			http.Error(w, markAsReadError, http.StatusInternalServerError)
 			log.WithField(errMsg, err).Error(markAsReadError)

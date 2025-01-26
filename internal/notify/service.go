@@ -79,7 +79,7 @@ func notify(repo Repo) {
 				siteMsgs = append(siteMsgs, NotifyMessage{
 					UserUuid:  (*list2)[i].UserUuid,
 					MerchUuid: (*list2)[i].MerchUuid,
-					Price:     (*list2)[i].Price,
+					PriceId:   (*list2)[i].PriceId,
 				})
 			}
 		}
