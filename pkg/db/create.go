@@ -1,35 +1,33 @@
 package db
 
-func (d *DB) Migrate(payload any) error {
-	err := d.DB.AutoMigrate(payload)
-	if err != nil {
-		return err
-	}
-	return nil
+func (d *DB) Migrate(model any) error {
+	return d.DB.AutoMigrate(model)
 }
 
 func (d *DB) Create(payload any) error {
-	err := d.DB.Create(payload).Error
-	if err != nil {
-		return err
-	}
-	return nil
+	return d.DB.Create(payload).Error
 }
 
 func (d *DB) CreateOrRewrite(payload any) error {
-	err := d.DB.Save(payload).Error
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return d.DB.Save(payload).Error
 }
 
-func (d *DB) Save(payload any) error {
-	err := d.DB.Create(payload).Error
+func (d *DB) CreateWithTransaction(payload1, payload2 any, origin any) error {
+	tx := d.DB.Begin()
+	err := tx.Exec(`SET TRANSACTION ISOLATION LEVEL READ COMMITTED`).Error
 	if err != nil {
-		return err
+		return tx.Rollback().Error
 	}
 
-	return nil
+	err = tx.Create(payload1).Error
+	if err != nil {
+		return tx.Rollback().Error
+	}
+
+	err = tx.Model(origin).Create(payload2).Error
+	if err != nil {
+		return tx.Rollback().Error
+	}
+
+	return tx.Commit().Error
 }

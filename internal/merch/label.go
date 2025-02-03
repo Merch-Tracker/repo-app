@@ -11,7 +11,7 @@ import (
 type Label struct {
 	gorm.Model
 	LabelUuid uuid.UUID
-	OwnerUuid uuid.UUID
+	UserUuid  uuid.UUID
 	Name      string `json:"name"`
 	Color     string `json:"color"`
 	BgColor   string `json:"bg_color"`
@@ -19,35 +19,19 @@ type Label struct {
 
 type CardLabel struct {
 	LabelUuid uuid.UUID `json:"label_uuid"`
-	OwnerUuid uuid.UUID
+	UserUuid  uuid.UUID
 	MerchUuid uuid.UUID `json:"merch_uuid"`
-}
-
-func MigrateLabel(repo Repo) error {
-	err := repo.Migrate(Label{})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func MigrateCardLabel(repo Repo) error {
-	err := repo.Migrate(CardLabel{})
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (m *MerchHandler) NewLabel() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := helpers.ReadBody(&w, r)
+		body, err := helpers.ReadBody(w, r)
 		if err != nil {
 			return
 		}
 
 		newLabel := &Label{}
-		err = helpers.DeserializeJSON(&w, body, newLabel)
+		err = helpers.DeserializeJSON(w, body, newLabel)
 		if err != nil {
 			return
 		}
@@ -60,7 +44,7 @@ func (m *MerchHandler) NewLabel() http.HandlerFunc {
 			newLabel.BgColor = "#ffffff"
 		}
 
-		newLabel.OwnerUuid = helpers.GetUserUuid(r)
+		newLabel.UserUuid = helpers.GetUserUuid(r)
 		newLabel.LabelUuid = uuid.New()
 
 		err = newLabel.Create(m.repo)
@@ -77,7 +61,7 @@ func (m *MerchHandler) NewLabel() http.HandlerFunc {
 
 func (m *MerchHandler) GetLabels() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		l := Label{OwnerUuid: helpers.GetUserUuid(r)}
+		l := Label{UserUuid: helpers.GetUserUuid(r)}
 
 		labels, err := l.ReadAll(m.repo)
 		if err != nil {
@@ -86,7 +70,7 @@ func (m *MerchHandler) GetLabels() http.HandlerFunc {
 			return
 		}
 
-		response, err := helpers.SerializeJSON(&w, labels)
+		response, err := helpers.SerializeJSON(w, labels)
 		if err != nil {
 			return
 		}
@@ -100,24 +84,24 @@ func (m *MerchHandler) GetLabels() http.HandlerFunc {
 
 func (m *MerchHandler) UpdateLabel() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		labelID, err := helpers.GetPathUuid(&w, r, "label_uuid")
+		labelID, err := helpers.GetPathUuid(w, r, "label_uuid")
 		if err != nil {
 			log.Error(labelsGetIdError)
 			return
 		}
 
-		body, err := helpers.ReadBody(&w, r)
+		body, err := helpers.ReadBody(w, r)
 		if err != nil {
 			return
 		}
 
 		updateLabel := &Label{}
-		err = helpers.DeserializeJSON(&w, body, updateLabel)
+		err = helpers.DeserializeJSON(w, body, updateLabel)
 		if err != nil {
 			return
 		}
 
-		updateLabel.OwnerUuid = helpers.GetUserUuid(r)
+		updateLabel.UserUuid = helpers.GetUserUuid(r)
 		updateLabel.LabelUuid = labelID
 
 		err = updateLabel.Update(m.repo)
@@ -134,14 +118,14 @@ func (m *MerchHandler) UpdateLabel() http.HandlerFunc {
 
 func (m *MerchHandler) DeleteLabel() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		labelID, err := helpers.GetPathUuid(&w, r, "label_uuid")
+		labelID, err := helpers.GetPathUuid(w, r, "label_uuid")
 		if err != nil {
 			log.Error(labelsGetIdError)
 			return
 		}
 
 		deleteLabel := &Label{
-			OwnerUuid: helpers.GetUserUuid(r),
+			UserUuid:  helpers.GetUserUuid(r),
 			LabelUuid: labelID,
 		}
 
@@ -158,20 +142,20 @@ func (m *MerchHandler) DeleteLabel() http.HandlerFunc {
 
 func (m *MerchHandler) AttachLabel() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := helpers.ReadBody(&w, r)
+		body, err := helpers.ReadBody(w, r)
 		if err != nil {
 			log.Error(labelAttachError)
 			return
 		}
 
 		cardLabel := &CardLabel{}
-		err = helpers.DeserializeJSON(&w, body, cardLabel)
+		err = helpers.DeserializeJSON(w, body, cardLabel)
 		if err != nil {
 			log.Error(labelAttachError)
 			return
 		}
 
-		cardLabel.OwnerUuid = helpers.GetUserUuid(r)
+		cardLabel.UserUuid = helpers.GetUserUuid(r)
 		err = cardLabel.Attach(m.repo)
 		if err != nil {
 			http.Error(w, labelAttachError, http.StatusInternalServerError)
@@ -186,20 +170,20 @@ func (m *MerchHandler) AttachLabel() http.HandlerFunc {
 
 func (m *MerchHandler) DetachLabel() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := helpers.ReadBody(&w, r)
+		body, err := helpers.ReadBody(w, r)
 		if err != nil {
 			log.Error(labelDetachError)
 			return
 		}
 
 		cardLabel := &CardLabel{}
-		err = helpers.DeserializeJSON(&w, body, cardLabel)
+		err = helpers.DeserializeJSON(w, body, cardLabel)
 		if err != nil {
 			log.Error(labelDetachError)
 			return
 		}
 
-		cardLabel.OwnerUuid = helpers.GetUserUuid(r)
+		cardLabel.UserUuid = helpers.GetUserUuid(r)
 		err = cardLabel.Detach(m.repo)
 		if err != nil {
 			http.Error(w, labelDetachError, http.StatusInternalServerError)
@@ -224,7 +208,7 @@ func (l *Label) Create(repo Repo) error {
 func (l *Label) ReadAll(repo Repo) (*[]Label, error) {
 	labels := &[]Label{}
 	params := make(map[string]any)
-	params["owner_uuid"] = l.OwnerUuid
+	params["user_uuid"] = l.UserUuid
 
 	err := repo.ReadManySimple(labels, params)
 	if err != nil {
@@ -235,7 +219,7 @@ func (l *Label) ReadAll(repo Repo) (*[]Label, error) {
 
 func (l *Label) Update(repo Repo) error {
 	params := make(map[string]any)
-	params["owner_uuid"] = l.OwnerUuid
+	params["user_uuid"] = l.UserUuid
 	params["label_uuid"] = l.LabelUuid
 
 	err := repo.Update(l, params)
@@ -247,7 +231,7 @@ func (l *Label) Update(repo Repo) error {
 
 func (l *Label) Delete(repo Repo) error {
 	params := make(map[string]any)
-	params["owner_uuid"] = l.OwnerUuid
+	params["user_uuid"] = l.UserUuid
 	params["label_uuid"] = l.LabelUuid
 
 	err := repo.Delete(l, params)
@@ -267,7 +251,7 @@ func (c *CardLabel) Attach(repo Repo) error {
 
 func (c *CardLabel) Detach(repo Repo) error {
 	params := make(map[string]any)
-	params["owner_uuid"] = c.OwnerUuid
+	params["user_uuid"] = c.UserUuid
 	params["merch_uuid"] = c.MerchUuid
 	params["label_uuid"] = c.LabelUuid
 
@@ -280,12 +264,13 @@ func (c *CardLabel) Detach(repo Repo) error {
 
 func (c *CardLabel) ReadAll(repo Repo) (*[]CardLabel, error) {
 	params := make(map[string]any)
-	params["owner_uuid"] = c.OwnerUuid
+	params["user_uuid"] = c.UserUuid
 
 	labels := &[]CardLabel{}
 	err := repo.ReadManySimple(labels, params)
 	if err != nil {
 		return nil, err
 	}
+
 	return labels, nil
 }

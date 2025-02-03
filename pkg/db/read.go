@@ -32,29 +32,16 @@ func (d *DB) ReadOnePayload(model any, payload any, params map[string]any) error
 	return nil
 }
 
-func (d *DB) ReadMany(payload any, params map[string]any) error {
-	query := d.DB.Table("merches AS m").
-		Select(`m.name, m.link, m.merch_uuid, m.owner_uuid, m.created_at, m.updated_at,
-		m.parse_tag, m.parse_substring, m.cookie_values, m.separator,
-		(SELECT price FROM merch_infos mi1 WHERE mi1.merch_uuid = m.merch_uuid ORDER BY mi1.id DESC LIMIT 1) AS new_price,
-		(SELECT price FROM merch_infos mi2 WHERE mi2.merch_uuid = m.merch_uuid ORDER BY mi2.id DESC OFFSET 1 LIMIT 1) AS old_price`).
-		Where("m.deleted_at IS NULL")
-
-	for k, v := range params {
-		query = query.Where(fmt.Sprintf("%s = ?", k), v)
-	}
-
-	query = query.Find(payload)
-	err := query.Error
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (d *DB) ReadPrices(model any, list []string, offset int) error {
+	return d.DB.Table("prices AS p").
+		Select(fmt.Sprintf(`p.id, p.merch_uuid,
+		(SELECT price FROM prices AS pi WHERE pi.merch_uuid = p.merch_uuid
+		ORDER BY id DESC LIMIT 1 OFFSET %d)`, offset)).
+		Where("merch_uuid IN (?)", list).Limit(len(list)).Find(model).Error
 }
 
 func (d *DB) Read(model, payload any) error {
+	// unused, keep for later
 	query := d.DB.Model(model).Find(payload)
 	err := query.Error
 	if err != nil {
@@ -76,6 +63,20 @@ func (d *DB) ReadManySimple(model any, params map[string]any) error {
 		return err
 	}
 	return nil
+}
+
+func (d *DB) ReadManySimpleSubmodel(model any, submodel any, params map[string]any) error {
+	query := d.DB.Model(model)
+
+	for k, v := range params {
+		query = query.Where(fmt.Sprintf("%s = ?", k), v)
+	}
+
+	return query.Find(submodel).Error
+}
+
+func (d *DB) ReadManyInList(model any, list []string) error {
+	return d.DB.Model(model).Where("merch_uuid IN (?)", list).Find(model).Error
 }
 
 func (d *DB) ReadManySubmodel(model any, payload any, params map[string]any) error {
@@ -100,14 +101,14 @@ func (d *DB) ReadManySubmodel(model any, payload any, params map[string]any) err
 }
 
 func (d *DB) ReadCharts(payload any, params map[string]any) error {
-	query := d.DB.Table("merch_infos AS mi").
-		Select("me.name, me.link, mi.merch_uuid, json_agg(json_build_object("+
-			"'created_at', mi.created_at, 'price', mi.price) ORDER BY mi.created_at) AS prices").
-		Joins("JOIN merches AS me ON mi.merch_uuid = me.merch_uuid").
-		Where("me.owner_uuid = ?", params["owner_uuid"]).
-		Where("mi.created_at >= ?", params["days"]).
-		Where("mi.deleted_at IS NULL").
-		Group("mi.merch_uuid, me.name, me.link").
+	query := d.DB.Table("prices AS p").
+		Select("me.name, p.merch_uuid, json_agg(json_build_object("+
+			"'created_at', p.created_at, 'price', p.price) ORDER BY p.created_at) AS prices").
+		Joins("JOIN merch AS me ON p.merch_uuid = me.merch_uuid").
+		Where("me.user_uuid = ?", params["user_uuid"]).
+		Where("p.created_at >= ?", params["days"]).
+		Where("p.deleted_at IS NULL").
+		Group("p.merch_uuid, me.name").
 		Scan(payload)
 
 	err := query.Error

@@ -11,9 +11,15 @@ import (
 
 type Repo types.Repo
 
+var validOrigins = map[string]any{
+	"surugaya":  &Surugaya{},
+	"mandarake": &Mandarake{},
+}
+
 type MerchHandler struct {
-	repo     Repo
-	validate *validator.Validate
+	repo         Repo
+	validate     *validator.Validate
+	validOrigins []string
 }
 
 func NewMerchHandler(router *http.ServeMux, repo Repo) {
@@ -23,33 +29,42 @@ func NewMerchHandler(router *http.ServeMux, repo Repo) {
 		validate: validator.New(),
 	}
 
-	err = MigrateMerch(repo)
+	err = migrateMerch(repo)
 	if err != nil {
 		log.Fatal(merchTableError)
 	}
 
-	err = MigrateMerchInfo(repo)
+	err = migratePrices(repo)
 	if err != nil {
 		log.Fatal(pricesTableError)
 	}
 
-	err = MigrateLabel(repo)
+	err = migrateLabels(repo)
 	if err != nil {
 		log.Fatal(labelsTableError)
 	}
 
-	err = MigrateCardLabel(repo)
+	err = migrateCardLabels(repo)
 	if err != nil {
 		log.Fatal(cardLabelsTableError)
+	}
+
+	err = migrateOriginSurugaya(repo)
+	if err != nil {
+		log.Fatal(originSurugayaError)
+	}
+
+	err = migrateOriginMandarake(repo)
+	if err != nil {
+		log.Fatal(originMandarakeError)
 	}
 
 	log.Debug(migrationsSuccess)
 
 	router.HandleFunc("POST /merch", handler.New())
-	router.HandleFunc("GET /merch/", handler.ReadOne())
 	router.HandleFunc("GET /merch/all", handler.ReadAll())
-	router.HandleFunc("PUT /merch/{merch_uuid}", handler.Update())
-	router.HandleFunc("DELETE /merch/{merch_uuid}", handler.Delete())
+	router.HandleFunc("PUT /merch/", handler.Update())
+	router.HandleFunc("DELETE /merch/", handler.Delete())
 
 	router.HandleFunc("POST /label", handler.NewLabel())
 	router.HandleFunc("GET /label", handler.GetLabels())
@@ -65,18 +80,24 @@ func NewMerchHandler(router *http.ServeMux, repo Repo) {
 
 func (m *MerchHandler) New() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := helpers.ReadBody(&w, r)
+		body, err := helpers.ReadBody(w, r)
 		if err != nil {
 			return
 		}
 
-		newMerch := Merch{}
-		err = helpers.DeserializeJSON(&w, body, &newMerch)
+		var newMerch NewMerch
+		err = helpers.DeserializeJSON(w, body, &newMerch)
 		if err != nil {
 			return
 		}
 
-		err = m.validate.Struct(newMerch)
+		if !validOrigin(newMerch.Merch.Origin) {
+			http.Error(w, unknownOriginError, http.StatusBadRequest)
+			log.Warn(unknownOriginError)
+			return
+		}
+
+		err = m.validate.Struct(newMerch.Merch)
 		if err != nil {
 			http.Error(w, newMerchValidationError, http.StatusBadRequest)
 			for _, err = range err.(validator.ValidationErrors) {
@@ -85,8 +106,8 @@ func (m *MerchHandler) New() http.HandlerFunc {
 			return
 		}
 
-		newMerch.OwnerUuid = helpers.GetUserUuid(r)
-		newMerch.MerchUuid = uuid.New()
+		newMerch.Merch.UserUuid = helpers.GetUserUuid(r)
+		newMerch.Merch.MerchUuid = uuid.New()
 
 		err = newMerch.Create(m.repo)
 		if err != nil {
@@ -100,66 +121,17 @@ func (m *MerchHandler) New() http.HandlerFunc {
 	}
 }
 
-func (m *MerchHandler) ReadOne() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		readMerch := Merch{}
-		readMerch.OwnerUuid = helpers.GetUserUuid(r)
-
-		err := readMerch.ReadOne(m.repo)
-		if err != nil {
-			http.Error(w, merchReadError, http.StatusInternalServerError)
-			log.WithField(errMsg, err).Error(merchReadError)
-			return
-		}
-
-		response, err := helpers.SerializeJSON(&w, readMerch)
-		if err != nil {
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(response)
-		log.Info(merchReadSuccess)
-	}
-}
-
 func (m *MerchHandler) ReadAll() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		owner := helpers.GetUserUuid(r)
-		merch := Merch{OwnerUuid: owner}
-
-		// select all merch
-		allMerch, err := merch.ReadMany(m.repo)
+		model := MerchResponse{}
+		allMerch, err := model.ReadMany(m.repo, helpers.GetUserUuid(r))
 		if err != nil {
 			http.Error(w, merchReadError, http.StatusInternalServerError)
 			log.WithField(errMsg, err).Error(merchReadError)
 			return
 		}
 
-		//select labels for merch
-		label := CardLabel{OwnerUuid: owner}
-		cardLabels, err := label.ReadAll(m.repo)
-		if err != nil {
-			http.Error(w, labelsGetAllError, http.StatusInternalServerError)
-			log.WithField(errMsg, err).Error(labelsGetAllError)
-			return
-		}
-
-		labelList := make(map[uuid.UUID][]uuid.UUID, len(*cardLabels))
-		for _, item := range *cardLabels {
-			labelList[item.MerchUuid] = append(labelList[item.MerchUuid], item.LabelUuid)
-		}
-
-		//composing
-		var composedResponse []MerchWithLabels
-
-		for _, item := range *allMerch {
-			composedResponse = append(composedResponse, MerchWithLabels{item, labelList[item.MerchUuid]})
-		}
-
-		// composed response
-		response, err := helpers.SerializeJSON(&w, composedResponse)
+		response, err := helpers.SerializeJSON(w, allMerch)
 		if err != nil {
 			return
 		}
@@ -173,26 +145,46 @@ func (m *MerchHandler) ReadAll() http.HandlerFunc {
 
 func (m *MerchHandler) Update() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := helpers.ReadBody(&w, r)
+		body, err := helpers.ReadBody(w, r)
 		if err != nil {
 			return
 		}
 
-		merchUuid, err := helpers.GetPathUuid(&w, r, "merch_uuid")
+		rec := &NewMerch{}
+		rec.Merch.UserUuid = helpers.GetUserUuid(r)
+		err = helpers.DeserializeJSON(w, body, rec)
 		if err != nil {
 			return
 		}
 
-		merch := Merch{}
-		err = helpers.DeserializeJSON(&w, body, &merch)
-		if err != nil {
+		upd := &UpdateMerch{
+			Merch: rec.Merch,
+		}
+
+		switch rec.Merch.Origin {
+		case "surugaya":
+			upd.Data = &Surugaya{
+				MerchUuid:      rec.Merch.MerchUuid,
+				Link:           rec.Data["link"].(string),
+				ParseTag:       rec.Data["parse_tag"].(string),
+				ParseSubstring: rec.Data["parse_substring"].(string),
+				CookieValues:   rec.Data["cookie_values"].(string),
+				Separator:      rec.Data["separator"].(string),
+			}
+
+		case "mandarake":
+			upd.Data = &Mandarake{
+				MerchUuid: rec.Merch.MerchUuid,
+				Link:      rec.Data["link"].(string),
+			}
+
+		default:
+			http.Error(w, unknownOriginError, http.StatusBadRequest)
+			log.Warn(unknownOriginError)
 			return
 		}
 
-		merch.OwnerUuid = helpers.GetUserUuid(r)
-		merch.MerchUuid = merchUuid
-
-		err = merch.Update(m.repo)
+		err = upd.Update(m.repo)
 		if err != nil {
 			http.Error(w, merchUpdateError, http.StatusInternalServerError)
 			log.WithField(errMsg, err).Error(merchUpdateError)
@@ -206,24 +198,54 @@ func (m *MerchHandler) Update() http.HandlerFunc {
 
 func (m *MerchHandler) Delete() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		merchUuid, err := helpers.GetPathUuid(&w, r, "merch_uuid")
+		body, err := helpers.ReadBody(w, r)
 		if err != nil {
 			return
 		}
 
-		merch := Merch{
-			OwnerUuid: helpers.GetUserUuid(r),
-			MerchUuid: merchUuid,
+		rec := &NewMerch{}
+		rec.Merch.UserUuid = helpers.GetUserUuid(r)
+		err = helpers.DeserializeJSON(w, body, rec)
+		if err != nil {
+			return
 		}
 
-		err = merch.Delete(m.repo)
+		del := &UpdateMerch{
+			Merch: rec.Merch,
+		}
+
+		switch rec.Merch.Origin {
+		case "surugaya":
+			del.Data = &Surugaya{
+				MerchUuid: rec.Merch.MerchUuid,
+			}
+
+		case "mandarake":
+			del.Data = &Mandarake{
+				MerchUuid: rec.Merch.MerchUuid,
+			}
+
+		default:
+			http.Error(w, unknownOriginError, http.StatusBadRequest)
+			log.Warn(unknownOriginError)
+			return
+		}
+
+		err = del.Delete(m.repo)
 		if err != nil {
 			http.Error(w, merchDeleteError, http.StatusInternalServerError)
-			log.WithField("error", err).Error(merchDeleteError)
+			log.WithField(errMsg, err).Error(merchDeleteError)
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
 		log.Info(merchDeleteSuccess)
 	}
+}
+
+func validOrigin(origin string) bool {
+	if _, ok := validOrigins[origin]; ok {
+		return true
+	}
+	return false
 }

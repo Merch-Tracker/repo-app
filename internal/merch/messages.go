@@ -6,11 +6,17 @@ const (
 	respMsg      = "response"
 	noContentMsg = "No content"
 
-	merchTableError      = "Merchandise table migration failed"
-	pricesTableError     = "Prices table migration failed"
+	merchTableError  = "Merchandise table migration failed"
+	pricesTableError = "Prices table migration failed"
+
 	labelsTableError     = "Labels table migration failed"
 	cardLabelsTableError = "Card labels table migration failed"
-	migrationsSuccess    = "All migrations are successful"
+
+	originSurugayaError  = "Migration for origin Surugaya failed"
+	originMandarakeError = "Migration for origin Mandarake failed"
+
+	migrationsSuccess  = "All migrations are successful"
+	unknownOriginError = "Unknown origin"
 
 	newMerchValidationError = "Validation failed"
 

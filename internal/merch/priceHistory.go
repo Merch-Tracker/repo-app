@@ -19,13 +19,13 @@ type ChartPoint struct {
 type ChartsData struct {
 	Name      string          `json:"name"`
 	Link      string          `json:"link"`
-	MerchUuid uuid.UUID       `json:"MerchUuid"`
+	MerchUuid uuid.UUID       `json:"merch_uuid"`
 	Prices    json.RawMessage `json:"prices"`
 }
 
 func (m *MerchHandler) GetPriceHistory() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		merchUuid, err := helpers.GetPathUuid(&w, r, "merch_uuid")
+		merchUuid, err := helpers.GetPathUuid(w, r, "merch_uuid")
 		if err != nil {
 			return
 		}
@@ -68,7 +68,7 @@ func (m *MerchHandler) GetPriceHistory() http.HandlerFunc {
 			}
 		}
 
-		response, err := helpers.SerializeJSON(&w, filteredPrices)
+		response, err := helpers.SerializeJSON(w, filteredPrices)
 		if err != nil {
 			http.Error(w, serPriceHistory, http.StatusInternalServerError)
 			log.WithField(errMsg, err).Error(serPriceHistory)
@@ -88,7 +88,7 @@ func (c *ChartPoint) GetPriceHistory(repo Repo, merchUuid uuid.UUID, count int) 
 	params["merch_uuid"] = merchUuid
 	params["days"] = countDays(count)
 
-	err := repo.ReadManySubmodel(MerchInfo{}, prices, params)
+	err := repo.ReadManySubmodel(Price{}, prices, params)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func (m *MerchHandler) GetAllPrices() http.HandlerFunc {
 			log.WithField(respMsg, "No content").Info(chartsReadDataSuccess)
 		}
 
-		response, err := helpers.SerializeJSON(&w, chartData)
+		response, err := helpers.SerializeJSON(w, chartData)
 		if err != nil {
 			return
 		}
@@ -138,11 +138,11 @@ func (m *MerchHandler) GetAllPrices() http.HandlerFunc {
 	}
 }
 
-func (c *ChartsData) GetAllPrices(repo Repo, ownerUuid uuid.UUID, count int) (*[]ChartsData, error) {
+func (c *ChartsData) GetAllPrices(repo Repo, userUuid uuid.UUID, days int) (*[]ChartsData, error) {
 	prices := &[]ChartsData{}
 	params := make(map[string]any)
-	params["owner_uuid"] = ownerUuid
-	params["days"] = countDays(count)
+	params["user_uuid"] = userUuid
+	params["days"] = countDays(days)
 
 	err := repo.ReadCharts(prices, params)
 	if err != nil {

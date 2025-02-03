@@ -17,6 +17,33 @@ func (d *DB) Update(model any, params map[string]any) error {
 	return nil
 }
 
+func (d *DB) UpdateWithTransaction(model1 any, model2 any, params map[string]any) error {
+	tx := d.DB.Begin()
+	err := tx.Exec(`SET TRANSACTION ISOLATION LEVEL READ COMMITTED`).Error
+	if err != nil {
+		return tx.Rollback().Error
+	}
+
+	err = tx.
+		Where("merch_uuid = ?", params["merch_uuid"]).
+		Where("user_uuid = ?", params["user_uuid"]).
+		Updates(model1).
+		Error
+	if err != nil {
+		return tx.Rollback().Error
+	}
+
+	err = tx.
+		Where("merch_uuid = ?", params["merch_uuid"]).
+		Updates(model2).
+		Error
+	if err != nil {
+		return tx.Rollback().Error
+	}
+
+	return tx.Commit().Error
+}
+
 func (d *DB) UpdateNotifications(model any, ids []uint, userUuid string) error {
 	const batchSize = 100
 	for start := 0; start < len(ids); start += batchSize {

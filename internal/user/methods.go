@@ -18,7 +18,7 @@ func (u *UserHandler) Read() http.HandlerFunc {
 			return
 		}
 
-		response, err := helpers.SerializeJSON(&w, payload)
+		response, err := helpers.SerializeJSON(w, payload)
 		if err != nil {
 			return
 		}
@@ -32,13 +32,13 @@ func (u *UserHandler) Read() http.HandlerFunc {
 
 func (u *UserHandler) Update() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := helpers.ReadBody(&w, r)
+		body, err := helpers.ReadBody(w, r)
 		if err != nil {
 			return
 		}
 
 		updateUser := &User{}
-		err = helpers.DeserializeJSON(&w, body, &updateUser)
+		err = helpers.DeserializeJSON(w, body, &updateUser)
 		if err != nil {
 			return
 		}

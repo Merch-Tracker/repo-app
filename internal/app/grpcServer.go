@@ -60,7 +60,7 @@ func (s *pwServer) GetMerch(req *emptypb.Empty, stream pb.PriceWatcher_GetMerchS
 
 func (s *pwServer) PostMerch(stream pb.PriceWatcher_PostMerchServer) error {
 	saveInterval := time.Second * 2
-	batch := make([]merch.MerchInfo, 0)
+	batch := make([]merch.Price, 0)
 
 	ticker := time.NewTicker(saveInterval)
 	defer ticker.Stop()
@@ -95,7 +95,7 @@ func (s *pwServer) PostMerch(stream pb.PriceWatcher_PostMerchServer) error {
 			return err
 		}
 
-		entry := merch.MerchInfo{MerchUuid: uuid.MustParse(response.MerchUuid), Price: uint(response.Price)}
+		entry := merch.Price{MerchUuid: uuid.MustParse(response.MerchUuid), Price: uint(response.Price)}
 		batch = append(batch, entry)
 		log.WithField(respMsg, entry).Debug(grpcReceiveSuccess)
 	}
@@ -114,8 +114,8 @@ func (s *pwServer) PostMerch(stream pb.PriceWatcher_PostMerchServer) error {
 	return nil
 }
 
-func (s *pwServer) SaveToDB(list []merch.MerchInfo) error {
-	err := s.repo.Save(&list)
+func (s *pwServer) SaveToDB(list []merch.Price) error {
+	err := s.repo.Create(&list)
 	if err != nil {
 		return err
 	}

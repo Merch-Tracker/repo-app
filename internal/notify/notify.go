@@ -55,7 +55,7 @@ func (n *NotifierHandler) GetNotifications() http.HandlerFunc {
 			return
 		}
 
-		response, err := helpers.SerializeJSON(&w, messages)
+		response, err := helpers.SerializeJSON(w, messages)
 		if err != nil {
 			return
 		}
@@ -71,13 +71,13 @@ func (n *NotifierHandler) MarkAsRead() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		usr := helpers.GetUserUuid(r)
 
-		body, err := helpers.ReadBody(&w, r)
+		body, err := helpers.ReadBody(w, r)
 		if err != nil {
 			return
 		}
 
 		var updateList []uint
-		err = helpers.DeserializeJSON(&w, body, &updateList)
+		err = helpers.DeserializeJSON(w, body, &updateList)
 		if err != nil {
 			return
 		}

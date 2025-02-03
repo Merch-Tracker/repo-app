@@ -34,13 +34,13 @@ func NewAuthHandler(router *http.ServeMux, repo Repo) {
 
 func (a *Auth) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := helpers.ReadBody(&w, r)
+		body, err := helpers.ReadBody(w, r)
 		if err != nil {
 			return
 		}
 
 		loginUser := user.LoginUser{}
-		err = helpers.DeserializeJSON(&w, body, &loginUser)
+		err = helpers.DeserializeJSON(w, body, &loginUser)
 		if err != nil {
 			return
 		}
@@ -107,13 +107,13 @@ func (a *Auth) Logout() http.HandlerFunc {
 
 func (a *Auth) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		body, err := helpers.ReadBody(&w, r)
+		body, err := helpers.ReadBody(w, r)
 		if err != nil {
 			return
 		}
 
 		registerUser := user.RegisterUser{}
-		err = helpers.DeserializeJSON(&w, body, &registerUser)
+		err = helpers.DeserializeJSON(w, body, &registerUser)
 		if err != nil {
 			return
 		}

@@ -51,7 +51,7 @@ func (i *ImageHandler) Upload() http.HandlerFunc {
 			return
 		}
 
-		merchUuid, err := helpers.GetPathUuid(&w, r, "merch_uuid")
+		merchUuid, err := helpers.GetPathUuid(w, r, "merch_uuid")
 		if err != nil {
 			return
 		}
@@ -74,7 +74,7 @@ func (i *ImageHandler) Upload() http.HandlerFunc {
 
 func (i *ImageHandler) SendImage() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		merchUuid, err := helpers.GetPathUuid(&w, r, "merch_uuid")
+		merchUuid, err := helpers.GetPathUuid(w, r, "merch_uuid")
 		if err != nil {
 			return
 		}
