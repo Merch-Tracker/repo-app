@@ -34,10 +34,11 @@ func (d *DB) ReadOnePayload(model any, payload any, params map[string]any) error
 
 func (d *DB) ReadPrices(model any, list []string, offset int) error {
 	return d.DB.Table("prices AS p").
-		Select(fmt.Sprintf(`p.id, p.merch_uuid,
-		(SELECT price FROM prices AS pi WHERE pi.merch_uuid = p.merch_uuid
-		ORDER BY id DESC LIMIT 1 OFFSET %d)`, offset)).
-		Where("merch_uuid IN (?)", list).Limit(len(list)).Find(model).Error
+		Select(fmt.Sprintf(`p.id, p.merch_uuid, 
+		(SELECT price FROM prices AS pi WHERE pi.merch_uuid = p.merch_uuid ORDER BY id DESC LIMIT 1 OFFSET %d)`, offset)).
+		Where("merch_uuid IN (?)", list).
+		Order("p.id DESC").
+		Limit(len(list) * 2).Find(model).Error
 }
 
 func (d *DB) Read(model, payload any) error {
@@ -107,7 +108,7 @@ func (d *DB) ReadCharts(payload any, params map[string]any) error {
 		Joins("JOIN merch AS me ON p.merch_uuid = me.merch_uuid").
 		Where("me.user_uuid = ?", params["user_uuid"]).
 		Where("p.created_at >= ?", params["days"]).
-		Where("p.deleted_at IS NULL").
+		Where("me.deleted_at IS NULL").
 		Group("p.merch_uuid, me.name").
 		Scan(payload)
 
