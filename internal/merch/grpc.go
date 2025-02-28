@@ -18,7 +18,8 @@ func (m *GMerch) ReadAll(repo Repo) ([]GMerch, error) {
 	sql := `
 		SELECT m.merch_uuid, os.link, os.parse_tag, os.parse_substring, os.cookie_values, os.separator
 		FROM merch as m 
-		JOIN origin_surugaya as os ON m.merch_uuid = os.merch_uuid;   
+		JOIN origin_surugaya as os ON m.merch_uuid = os.merch_uuid
+		WHERE m.deleted_at IS NULL;   
 	`
 
 	err := repo.ReadRaw(sql, &allMerch)
