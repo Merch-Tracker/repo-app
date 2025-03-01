@@ -10,8 +10,10 @@ import (
 	"repo-app/internal/images"
 	"repo-app/internal/merch"
 	"repo-app/internal/notify"
+	"repo-app/internal/status"
 	"repo-app/internal/user"
 	"repo-app/pkg/jwt"
+	pb "repo-app/pkg/pricewatcher"
 	"repo-app/pkg/types"
 )
 
@@ -21,13 +23,14 @@ type App struct {
 	Router          *http.ServeMux
 	HttpServer      *Server
 	GrpcServer      *grpc.Server
+	GrpcClient      pb.PriceWatcherClient
 	NotifierService *notify.NotificationService
 	NotifierChan    chan struct{}
 }
 
 func (a *App) Init() {
 	// init vars
-	a.NotifierChan = make(chan struct{})
+	a.NotifierChan = make(chan struct{}, 30)
 	jwt.Secret = a.Config.HttpConf.Secret
 
 	if a.DB == nil {
@@ -38,6 +41,7 @@ func (a *App) Init() {
 	a.Router = http.NewServeMux()
 	a.HttpServer = NewHttpServer(a.Config, a.Router)
 	a.GrpcServer = NewGrpcServer(a.DB, a.NotifierChan)
+	a.GrpcClient = NewGrpcClient(a.Config)
 	a.NotifierService = notify.NewNotificationService(a.DB, a.NotifierChan)
 
 	// init packages
@@ -47,6 +51,7 @@ func (a *App) Init() {
 	merch.NewMerchHandler(a.Router, a.DB)
 	images.NewImageHandler(a.Router, a.DB)
 	notify.NewNotifierHandler(a.DB, a.Router)
+	status.NewStatusHandler(a.Router, a.GrpcClient)
 }
 
 func (a *App) Start() {
@@ -60,7 +65,7 @@ func (a *App) Start() {
 	log.Info(httpServerStart)
 
 	go func() {
-		listener, err := net.Listen("tcp", net.JoinHostPort(a.Config.HttpConf.Host, a.Config.HttpConf.GrpcPort))
+		listener, err := net.Listen("tcp", net.JoinHostPort(a.Config.HttpConf.Host, a.Config.HttpConf.GrpcServerPort))
 		if err != nil {
 			log.WithField(errMsg, err).Fatal(grpcServerFatal)
 		}

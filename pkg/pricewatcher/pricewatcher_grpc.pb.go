@@ -20,8 +20,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PriceWatcher_GetMerch_FullMethodName  = "/pricewatcher.PriceWatcher/GetMerch"
-	PriceWatcher_PostMerch_FullMethodName = "/pricewatcher.PriceWatcher/PostMerch"
+	PriceWatcher_GetMerch_FullMethodName   = "/pricewatcher.PriceWatcher/GetMerch"
+	PriceWatcher_PostMerch_FullMethodName  = "/pricewatcher.PriceWatcher/PostMerch"
+	PriceWatcher_ParserInfo_FullMethodName = "/pricewatcher.PriceWatcher/ParserInfo"
 )
 
 // PriceWatcherClient is the client API for PriceWatcher service.
@@ -30,6 +31,7 @@ const (
 type PriceWatcherClient interface {
 	GetMerch(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[MerchRequest], error)
 	PostMerch(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[MerchResponse, emptypb.Empty], error)
+	ParserInfo(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*StatusResponse, error)
 }
 
 type priceWatcherClient struct {
@@ -72,12 +74,23 @@ func (c *priceWatcherClient) PostMerch(ctx context.Context, opts ...grpc.CallOpt
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type PriceWatcher_PostMerchClient = grpc.ClientStreamingClient[MerchResponse, emptypb.Empty]
 
+func (c *priceWatcherClient) ParserInfo(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*StatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(StatusResponse)
+	err := c.cc.Invoke(ctx, PriceWatcher_ParserInfo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PriceWatcherServer is the server API for PriceWatcher service.
 // All implementations must embed UnimplementedPriceWatcherServer
 // for forward compatibility.
 type PriceWatcherServer interface {
 	GetMerch(*emptypb.Empty, grpc.ServerStreamingServer[MerchRequest]) error
 	PostMerch(grpc.ClientStreamingServer[MerchResponse, emptypb.Empty]) error
+	ParserInfo(context.Context, *StatusRequest) (*StatusResponse, error)
 	mustEmbedUnimplementedPriceWatcherServer()
 }
 
@@ -93,6 +106,9 @@ func (UnimplementedPriceWatcherServer) GetMerch(*emptypb.Empty, grpc.ServerStrea
 }
 func (UnimplementedPriceWatcherServer) PostMerch(grpc.ClientStreamingServer[MerchResponse, emptypb.Empty]) error {
 	return status.Errorf(codes.Unimplemented, "method PostMerch not implemented")
+}
+func (UnimplementedPriceWatcherServer) ParserInfo(context.Context, *StatusRequest) (*StatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ParserInfo not implemented")
 }
 func (UnimplementedPriceWatcherServer) mustEmbedUnimplementedPriceWatcherServer() {}
 func (UnimplementedPriceWatcherServer) testEmbeddedByValue()                      {}
@@ -133,13 +149,36 @@ func _PriceWatcher_PostMerch_Handler(srv interface{}, stream grpc.ServerStream) 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type PriceWatcher_PostMerchServer = grpc.ClientStreamingServer[MerchResponse, emptypb.Empty]
 
+func _PriceWatcher_ParserInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PriceWatcherServer).ParserInfo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PriceWatcher_ParserInfo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PriceWatcherServer).ParserInfo(ctx, req.(*StatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PriceWatcher_ServiceDesc is the grpc.ServiceDesc for PriceWatcher service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var PriceWatcher_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "pricewatcher.PriceWatcher",
 	HandlerType: (*PriceWatcherServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ParserInfo",
+			Handler:    _PriceWatcher_ParserInfo_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "GetMerch",

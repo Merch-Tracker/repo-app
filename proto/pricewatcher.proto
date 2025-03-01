@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "localhost:9000/yourusername/pricewatcher;pricewatcher";
+option go_package = "./pricewatcher";
 
 package pricewatcher;
 
@@ -20,7 +20,17 @@ message MerchResponse {
   uint32 price = 2;
 }
 
+message StatusRequest{}
+
+message StatusResponse {
+  uint64 start_time = 1;
+  uint64 last_check = 2;
+  uint32 num_cpus = 3;
+  uint32 check_period = 4;
+}
+
 service PriceWatcher {
   rpc GetMerch(google.protobuf.Empty) returns (stream MerchRequest);
   rpc PostMerch(stream MerchResponse) returns (google.protobuf.Empty);
+  rpc ParserInfo(StatusRequest) returns (StatusResponse);
 }
