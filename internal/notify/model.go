@@ -48,8 +48,8 @@ type PricesList struct {
 }
 
 type NotifierRecord struct {
-	Target string `json:"target"`
-	Origin string `json:"origin"`
+	Target string `json:"target"` //link or id
+	Origin string `json:"origin"` //platform name
 }
 
 type PriceRecords struct {
@@ -82,7 +82,7 @@ func (n *UsersList) GetList(repo Repo) (*[]UsersList, error) {
 	sql := `
 		SELECT u.user_uuid, n.target, n.origin
 		FROM users AS u
-		JOIN notifiers as n on u.user_uuid = n.user_uuid
+		LEFT JOIN notifiers as n on u.user_uuid = n.user_uuid
 		WHERE u.deleted_at IS NULL
 		`
 
@@ -96,16 +96,21 @@ func (n *UsersList) GetList(repo Repo) (*[]UsersList, error) {
 }
 
 func (p *PricesList) GetList(repo Repo, userList []string) (*[]PricesList, error) {
+	quotedUserList := make([]string, len(userList))
+	for i, userUUID := range userList {
+		quotedUserList[i] = "'" + userUUID + "'"
+	}
+
 	sql := fmt.Sprintf(`
-	WITH RankedPrices AS ( SELECT mi.merch_uuid, mi.price, mi.id AS price_id,
-		ROW_NUMBER() OVER (PARTITION BY mi.merch_uuid ORDER BY mi.created_at DESC) AS rn
-	FROM merch_infos mi )
+	WITH RankedPrices AS ( SELECT p.merch_uuid, p.price, p.id AS price_id,
+		ROW_NUMBER() OVER (PARTITION BY p.merch_uuid ORDER BY p.created_at DESC) AS rn
+	FROM prices AS p )
 	SELECT u.user_uuid, m.merch_uuid, m.name, rp.price, price_id
 	FROM users u
-	JOIN merches m ON u.user_uuid = m.owner_uuid
+	JOIN merch AS m ON u.user_uuid = m.user_uuid
 	JOIN RankedPrices rp ON m.merch_uuid = rp.merch_uuid
 	WHERE rp.rn <= 2 AND u.user_uuid IN (%s)
-	ORDER BY u.user_uuid, m.merch_uuid, rp.rn`, `'`+strings.Join(userList, ",")+`'`)
+	ORDER BY u.user_uuid, m.merch_uuid, rp.rn;`, strings.Join(quotedUserList, ","))
 
 	payload := &[]PricesList{}
 
@@ -120,8 +125,8 @@ func (n *NotifyMessageResponse) ReadAll(repo Repo) (*[]NotifyMessageResponse, er
 	sql := fmt.Sprintf(`
 		SELECT nm.id, m.name, mi.created_at, nm.merch_uuid, mi.price, nm.seen
 		FROM notify_messages AS nm
-		JOIN merches AS m ON m.merch_uuid = nm.merch_uuid
-		JOIN merch_infos AS mi ON nm.price_id = mi.id
+		JOIN merch AS m ON m.merch_uuid = nm.merch_uuid
+		JOIN prices AS mi ON nm.price_id = mi.id
 		WHERE nm.user_uuid = '%s'
 		ORDER BY mi.created_at DESC;
 	`, n.UserUuid)
