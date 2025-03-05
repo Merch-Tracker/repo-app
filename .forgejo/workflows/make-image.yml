@@ -1,0 +1,19 @@
+on:
+  push:
+    tags:
+      - 'v[0-9]+*'
+
+env:
+  IMAGE_NAME: repo-app
+
+jobs:
+  docker:
+    name: Make image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Make image
+        run: |
+         docker buildx build -t repo.nqws.ru/Parsing-App/Repo-App:latest --push .
