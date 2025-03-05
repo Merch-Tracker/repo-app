@@ -1,7 +1,6 @@
 package merch
 
 import (
-	"fmt"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"time"
@@ -63,9 +62,6 @@ func (m *Merch) ReadOne(repo Repo) error {
 	if err != nil {
 		return err
 	}
-
-	fmt.Println(m)
-
 	return nil
 }
 

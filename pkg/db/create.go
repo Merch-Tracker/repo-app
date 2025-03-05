@@ -1,5 +1,7 @@
 package db
 
+import "gorm.io/gorm/clause"
+
 func (d *DB) Migrate(model any) error {
 	return d.DB.AutoMigrate(model)
 }
@@ -30,4 +32,10 @@ func (d *DB) CreateWithTransaction(payload1, payload2 any, origin any) error {
 	}
 
 	return tx.Commit().Error
+}
+
+func (d *DB) CreateWithConflictCheck(payload any) error {
+	return d.DB.Model(payload).Clauses(clause.OnConflict{
+		DoNothing: true,
+	}).Create(payload).Error
 }

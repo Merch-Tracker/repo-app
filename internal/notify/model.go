@@ -12,7 +12,7 @@ type NotifyMessage struct {
 	Id        uint   `json:"id" gorm:"primary_key"`
 	UserUuid  string `json:"-"`
 	MerchUuid string `json:"merch_uuid"`
-	PriceId   uint   `json:"price_id"`
+	PriceId   uint   `json:"price_id" gorm:"unique"`
 	Seen      bool   `json:"seen"`
 }
 
@@ -110,6 +110,7 @@ func (p *PricesList) GetList(repo Repo, userList []string) (*[]PricesList, error
 	JOIN merch AS m ON u.user_uuid = m.user_uuid
 	JOIN RankedPrices rp ON m.merch_uuid = rp.merch_uuid
 	WHERE rp.rn <= 2 AND u.user_uuid IN (%s)
+	AND m.deleted_at IS NULL
 	ORDER BY u.user_uuid, m.merch_uuid, rp.rn;`, strings.Join(quotedUserList, ","))
 
 	payload := &[]PricesList{}

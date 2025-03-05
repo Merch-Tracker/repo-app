@@ -1,7 +1,6 @@
 package notify
 
 import (
-	"fmt"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -65,14 +64,12 @@ func notify(repo Repo) {
 		log.WithField(errMsg, err).Error(readPriceListError)
 		return
 	}
-	fmt.Println("PRICES LIST len", len(*list2))
 
 	//notes for site only
 	var siteMsgs []NotifyMessage
 
 	//comparing last and last-1 prices for non-zero values
 	for i := 0; i < len(*list2); i += 2 {
-		fmt.Println("Comparing\n", (*list2)[i], "\n", (*list2)[i+1])
 		//ensure prices are of the same merch
 		if (*list2)[i].MerchUuid == (*list2)[i+1].MerchUuid {
 			if (*list2)[i].Price != 0 && (*list2)[i+1].Price == 0 {
@@ -107,7 +104,7 @@ func notify(repo Repo) {
 }
 
 func CreateNotifications(repo Repo, payload []NotifyMessage) error {
-	err := repo.Create(payload)
+	err := repo.CreateWithConflictCheck(payload)
 	if err != nil {
 		return err
 	}

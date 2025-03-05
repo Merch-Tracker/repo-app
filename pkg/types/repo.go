@@ -6,6 +6,7 @@ type Repo interface {
 	Create(any) error
 	CreateOrRewrite(any) error
 	CreateWithTransaction(any, any, any) error
+	CreateWithConflictCheck(any) error
 
 	Read(any, any) error
 	ReadOne(any, map[string]any) error
