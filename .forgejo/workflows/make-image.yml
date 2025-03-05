@@ -14,6 +14,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Docker Buildx
+        run: docker buildx create --use
+
+      - name: Debug Docker Buildx
+        run: docker buildx version
+
       - name: Make image
         run: |
-         docker buildx build . -t repo.nqws.ru/Parsing-App/Repo-App:latest --push 
+          docker buildx build --platform linux/amd64 \
+            --tag repo.nqws.ru/Parsing-App/Repo-App:latest \
+            --push .
