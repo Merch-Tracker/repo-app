@@ -23,5 +23,5 @@ jobs:
       - name: Make image
         run: |
           docker buildx build --platform linux/amd64 \
-            --tag repo.nqws.ru/Parsing-App/Repo-App:latest \
+            --tag repo.nqws.ru/merch-tracker/repo-app:latest \
             --push .
