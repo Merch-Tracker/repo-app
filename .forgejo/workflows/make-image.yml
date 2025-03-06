@@ -14,11 +14,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Docker Buildx
-        run: docker buildx create --use
-
-      - name: Debug Docker Buildx
-        run: docker buildx version
+      - name: Login to Docker Registry
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login repo.nqws.ru -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Make image
         run: |
