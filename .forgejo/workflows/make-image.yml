@@ -17,8 +17,15 @@ jobs:
       - name: Login to Docker Registry
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login repo.nqws.ru -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
+      - name: Extract version from tag
+        id: extract_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+
       - name: Make image
         run: |
           docker buildx build --platform linux/amd64 \
             --tag repo.nqws.ru/merch-tracker/repo-app:latest \
+            --tag repo.nqws.ru/merch-tracker/repo-app:${{ env.VERSION }} \
             --push .
