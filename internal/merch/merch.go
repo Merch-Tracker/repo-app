@@ -76,6 +76,9 @@ func NewMerchHandler(router *http.ServeMux, repo Repo) {
 
 	router.HandleFunc("GET /prices/{merch_uuid}", handler.GetPriceHistory())
 	router.HandleFunc("GET /charts", handler.GetAllPrices())
+
+	router.HandleFunc("GET /zeroprices", handler.getZeroPrices())
+	router.HandleFunc("DELETE /zeroprices", handler.deleteZeroPrices())
 }
 
 func (m *MerchHandler) New() http.HandlerFunc {

@@ -51,4 +51,9 @@ const (
 	priceHistoryFetchSuccess = "Price history fetched successfully"
 	chartsReadDataError      = "Charts data read failed"
 	chartsReadDataSuccess    = "Charts data read successfully"
+
+	zeroPricesError         = "Zero prices read failed"
+	zeroPricesSuccess       = "Zero prices read successfully"
+	zeroPricesDeleteError   = "Zero prices delete failed"
+	zeroPricesDeleteSuccess = "Zero prices delete successfully"
 )
