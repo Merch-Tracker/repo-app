@@ -109,6 +109,7 @@ func (d *DB) ReadCharts(payload any, params map[string]any) error {
 		Where("me.user_uuid = ?", params["user_uuid"]).
 		Where("p.created_at >= ?", params["days"]).
 		Where("me.deleted_at IS NULL").
+		Where("p.deleted_at IS NULL").
 		Group("p.merch_uuid, me.name").
 		Scan(payload)
 
