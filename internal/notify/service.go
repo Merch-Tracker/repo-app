@@ -34,15 +34,21 @@ func notify(repo Repo) {
 		log.WithField(errMsg, err).Error(readUserListError)
 		return
 	}
+	log.WithFields(log.Fields{
+		"list len": len(*list),
+	}).Debug("NOTIFY | After get user list")
 
 	// stop if 0 users
 	if len(*list) < 1 {
+		log.Debug("NOTIFY | Zero user list len")
 		return
 	}
 
 	var userList []string
 	response := make(map[string]Response)
+	log.Debug("NOTIFY | Response map made")
 
+	log.Debug("NOTIFY | Start iterating users list")
 	for _, user := range *list {
 		userList = append(userList, user.UserUuid)
 
@@ -56,8 +62,10 @@ func notify(repo Repo) {
 			}
 		}
 	}
+	log.Debug("NOTIFY | End iterating users list")
 
 	// getting prices
+	log.Debug("NOTIFY | Start getting prices from DB")
 	pl := PricesList{}
 	list2, err := pl.GetList(repo, userList)
 	if err != nil {
@@ -65,9 +73,13 @@ func notify(repo Repo) {
 		return
 	}
 
+	log.WithField("len", len(*list2)).Debug("NOTIFY | Merch list")
+	log.Debug("NOTIFY | End getting prices from DB")
+
 	//notes for site only
 	var siteMsgs []NotifyMessage
 
+	log.Debug("NOTIFY | Start making list of new merch")
 	//comparing last and last-1 prices for non-zero values
 	for i := 0; i < len(*list2); i += 2 {
 		//ensure prices are of the same merch
@@ -89,18 +101,25 @@ func notify(repo Repo) {
 					PriceId:   (*list2)[i].PriceId,
 				})
 			}
+		} else {
+			log.WithField("merch_uuid", (*list2)[i].MerchUuid).Warn("NOTIFY | Merch price has no pair, skipping")
+			continue
 		}
 	}
+	log.Debug("NOTIFY | Stop making list of new merch")
 
 	//exit if no messages
 	if len(siteMsgs) < 1 {
 		return
 	}
 
+	log.Debug("NOTIFY | Creating notifications")
 	err = CreateNotifications(repo, siteMsgs)
 	if err != nil {
 		log.WithField(errMsg, err).Error(createNotificationsError)
 	}
+	log.Debug("NOTIFY | End of creating notifications")
+	log.WithField("status", "OK").Debug("NOTIFY | End of function")
 }
 
 func CreateNotifications(repo Repo, payload []NotifyMessage) error {
