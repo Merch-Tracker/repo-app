@@ -152,7 +152,7 @@ func (c *ChartsData) GetAllPrices(repo Repo, userUuid uuid.UUID, days int) (*[]C
 }
 
 func countDays(count int) time.Time {
-	if count > 0 && count <= 180 {
+	if count > 0 && count <= 365 {
 		return time.Now().Add(-time.Duration(count) * 24 * time.Hour)
 	} else {
 		return time.Now().Add(-time.Duration(7) * 24 * time.Hour)
